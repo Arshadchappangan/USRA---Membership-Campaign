@@ -6,6 +6,8 @@ const path = require('path');
 
 const app = express();
 
+console.log("Connected URI:", process.env.MONGODB_URI);
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
