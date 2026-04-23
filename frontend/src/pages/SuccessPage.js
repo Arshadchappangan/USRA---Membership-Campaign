@@ -95,12 +95,12 @@ const generateCard = async ({ memberData, memberDbId, photoPreviewUrl, logoSrc }
 
   ctx.font = '15px Arial';
   ctx.fillStyle = '#7a99b8';
-  ctx.fillText('United Service for Relational Amalgamation', 114, 80);
+  ctx.fillText('United Service for Relational Amalgamation', 114, 75);
 
-  ctx.font = 'bold 13px Arial';
+  ctx.font = 'bold 18px Arial';
   ctx.fillStyle = '#4EAEE5';
   ctx.letterSpacing = '2px';
-  ctx.fillText('MEMBERSHIP CARD  •  2026', 114, 102);
+  ctx.fillText('MEMBERSHIP CARD', 114, 95);
   ctx.letterSpacing = '0px';
 
   // ── Member photo (circular) ───────────────────────────────────────────────
@@ -283,7 +283,7 @@ const generateCard = async ({ memberData, memberDbId, photoPreviewUrl, logoSrc }
   ly += memberData.email || memberData.phone ? 105 : 140;
 
   // Member ID label + value
-  ctx.font = '13px Arial';
+  ctx.font = '15px Arial';
   ctx.fillStyle = '#4a6a88';
   ctx.letterSpacing = '1.5px';
   ctx.fillText('MEMBER ID', lx, ly);
@@ -508,31 +508,6 @@ const SuccessPage = () => {
           </div>
         </div>
 
-        {/* Payment details */}
-        <div className="glass rounded-3xl p-6 shadow-card">
-          <h3 className="font-bold text-gray-700 mb-4">Membership Details</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { label: 'MEMBER ID', value: memberDbId || paymentData?.memberDbId, copy: true, color: 'text-usra-blue font-black' },
-              { label: 'PAYMENT ID', value: paymentData?.paymentId, truncate: true, color: 'text-gray-700 text-sm font-bold' },
-              { label: 'AMOUNT PAID', value: '₹100.00', color: 'text-green-600 text-xl font-black' },
-              { label: 'CAMPAIGN', value: 'USRA 2026 • April 15–30', color: 'text-gray-700 text-sm font-bold' },
-            ].map((item, i) => (
-              <div key={i} className="bg-gray-50 rounded-2xl p-4">
-                <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">{item.label}</p>
-                <div className="flex items-center gap-2">
-                  <p className={`${item.color} ${item.truncate ? 'truncate' : ''}`}>{item.value}</p>
-                  {item.copy && (
-                    <button onClick={handleCopyId} className="p-1 rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0">
-                      <FiCopy className="w-3.5 h-3.5 text-gray-500" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Hidden poster canvas */}
         <canvas ref={canvasRef} className="hidden" />
 
@@ -553,7 +528,7 @@ const SuccessPage = () => {
               </span>
             )}
           </h3>
-          <p className="text-xs text-gray-400 mb-4">Your digital ID card — photo + QR code included</p>
+          <p className="text-xs text-gray-400 mb-4">Your digital ID card </p>
 
           {/* Card preview */}
           <div className="rounded-2xl overflow-hidden shadow-xl bg-[#0F1C35] mb-5">
@@ -576,7 +551,7 @@ const SuccessPage = () => {
               className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-white text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,#0F1C35,#4EAEE5)' }}
             >
-              <FiDownload className="w-4 h-4" /> Download Card
+              <FiDownload className="w-4 h-4" /> Download
             </button>
             <button
               onClick={() => cardDataUrl && share(cardDataUrl, `USRA-Card-${safeName}.png`, 'My USRA Membership Card 2026 #USRA2026')}
@@ -584,7 +559,7 @@ const SuccessPage = () => {
               className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-white text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,#9B59B6,#E91E8C)' }}
             >
-              <FiShare2 className="w-4 h-4" /> Share Card
+              <FiShare2 className="w-4 h-4" /> Share
             </button>
           </div>
         </div>
