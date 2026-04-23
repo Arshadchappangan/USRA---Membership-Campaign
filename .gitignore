@@ -1,0 +1,80 @@
+# ========================
+# Node modules
+# ========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ========================
+# Environment variables
+# ========================
+.env
+.env.local
+.env.*.local
+
+# ========================
+# Logs
+# ========================
+logs
+*.log
+
+# ========================
+# OS files
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# Build folders
+# ========================
+/build
+/dist
+/.next
+
+# ========================
+# Coverage
+# ========================
+coverage/
+
+# ========================
+# IDE files
+# ========================
+.vscode/
+.idea/
+
+# ========================
+# Uploads / Images
+# ========================
+uploads/
+public/uploads/
+
+# ========================
+# Cache files
+# ========================
+.cache/
+.tmp/
+
+# ========================
+# React specific
+# ========================
+frontend/node_modules/
+frontend/build/
+
+# ========================
+# Backend specific
+# ========================
+backend/node_modules/
+
+# ========================
+# Secrets (IMPORTANT)
+# ========================
+config/keys.js
+config/secrets.js
+
+# ========================
+# Misc
+# ========================
+*.zip
+*.tar
+*.gz
