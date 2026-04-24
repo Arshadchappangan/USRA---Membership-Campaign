@@ -13,7 +13,7 @@ import posterTemplate from '../assets/poster-template.png';
 const getQRDataUrl = async (text, size = 200, dark = '#1A2340', light = '#FFFFFF') => {
   // Use Google Charts QR API — sends no personal data, just the encoded string
   const encoded = encodeURIComponent(text);
-  const url = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}&color=${dark.replace('#','')}&bgcolor=${light.replace('#','')}&margin=2&format=png`;
+  const url = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}&color=${dark.replace('#', '')}&bgcolor=${light.replace('#', '')}&margin=2&format=png`;
   return url; // we'll drawImage from this URL directly
 };
 
@@ -58,9 +58,9 @@ const generateCard = async ({ memberData, memberDbId, photoPreviewUrl, logoSrc }
   // ── Gradient accent bars ──────────────────────────────────────────────────
   const makeGrad = (x0, x1) => {
     const g = ctx.createLinearGradient(x0, 0, x1, 0);
-    g.addColorStop(0,   '#4EAEE5');
+    g.addColorStop(0, '#4EAEE5');
     g.addColorStop(0.5, '#9B59B6');
-    g.addColorStop(1,   '#E91E8C');
+    g.addColorStop(1, '#E91E8C');
     return g;
   };
   ctx.fillStyle = makeGrad(0, W);
@@ -137,7 +137,7 @@ const generateCard = async ({ memberData, memberDbId, photoPreviewUrl, logoSrc }
       ctx.clip();
       // cover-fit square crop
       const s = Math.min(photo.naturalWidth, photo.naturalHeight);
-      const sx = (photo.naturalWidth  - s) / 2;
+      const sx = (photo.naturalWidth - s) / 2;
       const sy = (photo.naturalHeight - s) / 2;
       ctx.drawImage(photo, sx, sy, s, s, cx - photoR + 3, cy - photoR + 3, (photoR - 3) * 2, (photoR - 3) * 2);
       ctx.restore();
@@ -249,7 +249,7 @@ const generateCard = async ({ memberData, memberDbId, photoPreviewUrl, logoSrc }
   // Detail pills row: blood group, gender
   const pills = [];
   if (memberData.bloodGroup && memberData.bloodGroup !== '') pills.push({ label: '🩸 ' + memberData.bloodGroup, color: '#c0392b' });
-  if (memberData.gender)     pills.push({ label: memberData.gender === 'Male' ? '👨 Male' : memberData.gender === 'Female' ? '👩 Female' : '🧑 Other', color: '#2980b9' });
+  if (memberData.gender) pills.push({ label: memberData.gender === 'Male' ? '👨 Male' : memberData.gender === 'Female' ? '👩 Female' : '🧑 Other', color: '#2980b9' });
 
   let px = lx;
   for (const pill of pills) {
@@ -306,16 +306,16 @@ const SuccessPage = () => {
   const navigate = useNavigate();
   const { memberData, memberId, memberDbId, photoPreviewUrl, paymentData, resetAll } = useMembership();
 
-  const canvasRef          = useRef(null);
-  const confettiRef        = useRef(null);
+  const canvasRef = useRef(null);
+  const confettiRef = useRef(null);
 
-  const [posterDataUrl,    setPosterDataUrl]    = useState(null);
-  const [posterGenerated,  setPosterGenerated]  = useState(false);
+  const [posterDataUrl, setPosterDataUrl] = useState(null);
+  const [posterGenerated, setPosterGenerated] = useState(false);
   const [generatingPoster, setGeneratingPoster] = useState(false);
 
-  const [cardDataUrl,      setCardDataUrl]      = useState(null);
-  const [cardGenerated,    setCardGenerated]    = useState(false);
-  const [generatingCard,   setGeneratingCard]   = useState(false);
+  const [cardDataUrl, setCardDataUrl] = useState(null);
+  const [cardGenerated, setCardGenerated] = useState(false);
+  const [generatingCard, setGeneratingCard] = useState(false);
 
   if (!memberId || !paymentData) { navigate('/'); return null; }
 
@@ -324,7 +324,7 @@ const SuccessPage = () => {
     const canvas = confettiRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    canvas.width  = window.innerWidth;
+    canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     const particles = Array.from({ length: 120 }, () => ({
@@ -332,7 +332,7 @@ const SuccessPage = () => {
       y: Math.random() * canvas.height - canvas.height,
       r: Math.random() * 6 + 3,
       d: Math.random() * 120 + 10,
-      color: ['#4EAEE5','#9B59B6','#E91E8C','#F7941D','#22c55e'][Math.floor(Math.random() * 5)],
+      color: ['#4EAEE5', '#9B59B6', '#E91E8C', '#F7941D', '#22c55e'][Math.floor(Math.random() * 5)],
       tiltAngle: 0,
       tiltAngleIncrement: Math.random() * 0.07 + 0.05,
       opacity: 1,
@@ -384,7 +384,7 @@ const SuccessPage = () => {
       if (photoPreviewUrl) {
         try {
           const photo = await loadImg(photoPreviewUrl);
-          const pX = 680, pY = 440, pW = 335, pH = 420, r = 24;
+          const pX = 80, pY = 500, pW = 268, pH = 336, r = 19;
           ctx.save();
           ctx.beginPath();
           ctx.moveTo(pX + r, pY); ctx.lineTo(pX + pW - r, pY);
@@ -393,6 +393,17 @@ const SuccessPage = () => {
           ctx.quadraticCurveTo(pX + pW, pY + pH, pX + pW - r, pY + pH);
           ctx.lineTo(pX + r, pY + pH); ctx.quadraticCurveTo(pX, pY + pH, pX, pY + pH - r);
           ctx.lineTo(pX, pY + r); ctx.quadraticCurveTo(pX, pY, pX + r, pY);
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(pX + r, pY); ctx.lineTo(pX + pW - r, pY);
+          ctx.quadraticCurveTo(pX + pW, pY, pX + pW, pY + r);
+          ctx.lineTo(pX + pW, pY + pH - r);
+          ctx.quadraticCurveTo(pX + pW, pY + pH, pX + pW - r, pY + pH);
+          ctx.lineTo(pX + r, pY + pH); ctx.quadraticCurveTo(pX, pY + pH, pX, pY + pH - r);
+          ctx.lineTo(pX, pY + r); ctx.quadraticCurveTo(pX, pY, pX + r, pY);
+          ctx.closePath();
+          ctx.stroke();
           ctx.closePath(); ctx.clip();
           const iAR = photo.naturalWidth / photo.naturalHeight;
           const aAR = pW / pH;
@@ -401,10 +412,10 @@ const SuccessPage = () => {
           else { sw = photo.naturalWidth; sh = sw / aAR; sx = 0; sy = (photo.naturalHeight - sh) / 2; }
           ctx.drawImage(photo, sx, sy, sw, sh, pX, pY, pW, pH);
           ctx.restore();
-        } catch {}
+        } catch { }
       }
 
-      const tx = 60; let py = 545;
+      const tx = 430; let py = 580;
       ctx.font = 'bold 45px Nunito,Arial'; ctx.fillStyle = '#1A2340'; ctx.fillText(memberData.name, tx, py);
       const rel = memberData.gender === 'Female' ? 'D/O' : 'S/O';
       ctx.font = '38px Nunito,Arial'; ctx.fillStyle = '#6B7280'; ctx.fillText(rel, tx, py += 52);
@@ -445,7 +456,7 @@ const SuccessPage = () => {
   }, [memberData, memberId, memberDbId, paymentData, photoPreviewUrl]);
 
   useEffect(() => {
-    const t1 = setTimeout(generatePoster,     800);
+    const t1 = setTimeout(generatePoster, 800);
     const t2 = setTimeout(handleGenerateCard, 1200);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [generatePoster, handleGenerateCard]);
