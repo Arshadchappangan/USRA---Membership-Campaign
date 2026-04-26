@@ -37,7 +37,7 @@ function Avatar({ name, photoURL, size = 48 }) {
       style={{ width: size, height: size, background: `linear-gradient(135deg, ${from}, ${to})`, fontSize: size * 0.32 }}
     >
       {photoURL
-        ? <img src={`/uploads/${photoURL}`} alt={name} className="w-full h-full object-cover" />
+        ? <img src={photoURL} alt={name} className="w-full h-full object-cover" />
         : initials(name)}
     </div>
   );
@@ -104,14 +104,13 @@ function MemberCardGrid({ member }) {
       <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 justify-center">
         <FiMapPin size={10} /> {member.place}
       </p>
-      <span className="mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-bold"
+      {member.bloodGroup && (
+              <span className="mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-bold"
         style={{ background: "rgba(233,30,140,0.08)", color: "#993556", border: "1px solid rgba(233,30,140,0.2)" }}>
         {member.bloodGroup}
-      </span>
+      </span> )}
+
       <div className="mt-2"><PaymentBadge status={member.paymentStatus} /></div>
-      <p className="text-xs text-gray-400 mt-2 flex items-center gap-1 justify-center">
-        <FiCalendar size={10} /> {fmtDate(member.createdAt)}
-      </p>
     </div>
   );
 }
@@ -600,7 +599,7 @@ const MembersPage = () => {
           {/* Grid view */}
           {!loading && view === "grid" && paginated.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {paginated.map((m) => <MemberCardGrid key={m._id} member={m} />)}
+              {paginated.map((m) => <MemberCardGrid key={m._id} member={m}/>)}
             </div>
           )}
 
