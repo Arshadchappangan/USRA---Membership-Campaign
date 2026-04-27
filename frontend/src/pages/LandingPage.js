@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiArrowRight, FiUsers, FiHeart, FiStar } from 'react-icons/fi';
 import { Countdown } from '../components/CountDown';
 import { MembersMarquee } from '../components/Membersmarquee';
+import { LoadingScreen } from '../components/LoadingScreen';
 import usraLogo from '../assets/usra-logo.png';
 import usraRemovebg from '../assets/USRA-removebg.png';
 import { getMembers } from '../utils/api';
@@ -19,6 +20,7 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const heroRef = useRef(null);
   const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -42,12 +44,17 @@ const LandingPage = () => {
         setMembers(response.data);
       } catch (error) {
         console.error('Error fetching members:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchMembers();
   }, []);
 
+ if (loading) {
+    return <LoadingScreen message="Loading Data..." />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero overflow-hidden">
@@ -153,10 +160,10 @@ const LandingPage = () => {
             { value: '₹100', label: 'Membership Fee' },
             { value: '15 Days', label: 'Campaign Duration' },
           ].map((stat, i) => (
-          <div key={i} className="glass rounded-2xl p-5 text-center card-hover shadow-card">
-            <div className="text-3xl font-black gradient-text mb-1">{stat.value}</div>
-            <div className="text-sm text-gray-500 font-semibold">{stat.label}</div>
-          </div>
+            <div key={i} className="glass rounded-2xl p-5 text-center card-hover shadow-card">
+              <div className="text-3xl font-black gradient-text mb-1">{stat.value}</div>
+              <div className="text-sm text-gray-500 font-semibold">{stat.label}</div>
+            </div>
           ))}
         </div>
       </section>
