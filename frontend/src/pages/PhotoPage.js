@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Cropper from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
@@ -18,10 +18,11 @@ const PhotoPage = () => {
   const fileInputRef = useRef(null);
 
   // Redirect if no form data filled
-  if (!memberData?.name) {
-    navigate('/register');
-    return null;
-  }
+  useEffect(() => {
+    if (!memberData?.name) {
+      navigate('/register');
+    }
+  }, [memberData, navigate]);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];

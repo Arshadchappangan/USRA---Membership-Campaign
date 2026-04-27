@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -38,8 +38,13 @@ const ConfirmPage = () => {
   const [savedMemberId, setSavedMemberId] = useState(null); // internal MongoDB _id for payment
 
   // Redirect if data missing
-  if (!memberData?.name) { navigate('/register'); return null; }
-  if (!photoBlob) { navigate('/photo'); return null; }
+  useEffect(() => {
+    if (!memberData?.name) {
+      navigate('/register');
+    } else if (!photoBlob) {
+      navigate('/photo');
+    }
+  }, [memberData, photoBlob, navigate]);
 
   const formattedDob = memberData?.dob
     ? (() => { try { return format(new Date(memberData.dob), 'dd MMMM yyyy'); } catch { return memberData.dob; } })()
@@ -124,7 +129,7 @@ const ConfirmPage = () => {
         theme: { color: '#4EAEE5' },
         modal: {
           ondismiss: async () => {
-            await paymentAPI.markFailed(mongoId).catch(() => {});
+            await paymentAPI.markFailed(mongoId).catch(() => { });
             toast.error('Payment cancelled');
             setSavingStatus('saved'); // allow retry
           },
@@ -133,7 +138,7 @@ const ConfirmPage = () => {
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', async () => {
-        await paymentAPI.markFailed(mongoId).catch(() => {});
+        await paymentAPI.markFailed(mongoId).catch(() => { });
         toast.error('Payment failed. Please try again.');
         setSavingStatus('saved');
       });

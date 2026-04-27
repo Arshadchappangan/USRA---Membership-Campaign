@@ -74,16 +74,17 @@ function MemberCard({ member }) {
           background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
         }}
       >
-        {member.avatar ? (
+        {member.photo ? (
           <img
-            src={member.avatar}
-            alt={member.name}
+            src={member.photo}
+            alt={initials(member.name)}
             className="w-full h-full object-cover rounded-xl"
           />
         ) : (
-          initials(member.name)
+          <span className="text-lg">{initials(member.name)}</span>
         )}
       </div>
+    
 
       {/* Text */}
       <div className="overflow-hidden">
