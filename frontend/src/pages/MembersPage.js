@@ -90,65 +90,196 @@ function SkeletonList() {
 }
 
 // ── Member cards ──────────────────────────────────────────────────────────────
-function MemberCardGrid({ member }) {
-  return (
-    <div className="flex flex-col items-center text-center p-5 rounded-3xl transition-all duration-200 hover:-translate-y-1 cursor-default"
-      style={{
-        background: "rgba(255,255,255,0.82)",
-        border: "1.5px solid rgba(78,174,229,0.18)",
-        backdropFilter: "blur(10px)",
-        boxShadow: "0 4px 20px rgba(78,174,229,0.09)",
-      }}>
-      <Avatar name={member.name} photoURL={member.photo} size={56} />
-      <p className="mt-3 font-black text-gray-800 text-sm leading-tight">{member.name}</p>
-      <p className="text-xs text-gray-400 font-mono mt-0.5">{member.memberId}</p>
-      <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 justify-center">
-        <FiMapPin size={10} /> {member.place}
-      </p>
-      {member.bloodGroup && (
-        <span className="mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-bold"
-          style={{ background: "rgba(233,30,140,0.08)", color: "#993556", border: "1px solid rgba(233,30,140,0.2)" }}>
-          {member.bloodGroup}
-        </span>)}
+function MemberCardGrid({ member, onClick }) {
+  const [from, to] = accentFor(member.name);
+  const isPaid = member.paymentStatus === "completed";
 
-      <div className="mt-2"><PaymentBadge status={member.paymentStatus} /></div>
+  return (
+    <div
+      onClick={onClick}
+      className="relative flex flex-col items-center rounded-2xl transition-all duration-200 cursor-pointer overflow-hidden group"
+      style={{
+        background: "rgba(255,255,255,0.92)",
+        border: "1.5px solid rgba(78,174,229,0.15)",
+        backdropFilter: "blur(10px)",
+        padding: "16px 12px 12px",
+      }}
+      // Hover border lift handled via Tailwind group + inline fallback
+      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(78,174,229,0.45)"}
+      onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(78,174,229,0.15)"}
+    >
+      {/* Coloured top accent bar */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[3px]"
+        style={{ background: `linear-gradient(90deg, ${from}, ${to})` }}
+      />
+
+      {/* Avatar */}
+      <div
+        className="flex items-center justify-center rounded-2xl font-bold text-lg select-none overflow-hidden mt-1.5 mb-2.5 flex-shrink-0"
+        style={{
+          width: 52, height: 52,
+          background: `linear-gradient(135deg, ${from}22, ${to}22)`,
+          color: from,
+          border: `2px solid ${from}33`,
+        }}
+      >
+        {member.photo
+          ? <img src={member.photo} alt={member.name} className="w-full h-full object-cover" />
+          : initials(member.name)}
+      </div>
+
+      {/* Name */}
+      <p className="w-full text-center text-sm font-bold text-gray-800 leading-tight truncate">
+        {member.name}
+      </p>
+
+      {/* Member ID */}
+      <p className="text-[11px] text-gray-400 font-mono mt-0.5 text-center">
+        {member.memberId}
+      </p>
+
+      {/* Place */}
+      <p className="flex items-center gap-1 text-[11px] text-gray-400 mt-1.5">
+        <FiMapPin size={9} />
+        <span className="truncate max-w-[90px]">{member.place}</span>
+      </p>
+
+      {/* Divider */}
+      <div className="w-full my-2.5" style={{ height: "1px", background: "rgba(78,174,229,0.1)" }} />
+
+      {/* Badges row */}
+      <div className="flex flex-wrap items-center justify-center gap-1">
+        {member.bloodGroup && (
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
+            style={{ background: "rgba(233,30,140,0.08)", color: "#72243E", border: "0.5px solid #F4C0D1" }}
+          >
+            {member.bloodGroup}
+          </span>
+        )}
+        <span
+          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
+          style={
+            member.gender === "Female"
+              ? { background: "#EEEDFE", color: "#3C3489", border: "0.5px solid #CECBF6" }
+              : { background: "#E6F1FB", color: "#185FA5", border: "0.5px solid #B5D4F4" }
+          }
+        >
+          {member.gender}
+        </span>
+        <span
+          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
+          style={
+            isPaid
+              ? { background: "#EAF3DE", color: "#3B6D11", border: "0.5px solid #C0DD97" }
+              : { background: "#FAEEDA", color: "#854F0B", border: "0.5px solid #FAC775" }
+          }
+        >
+          {isPaid ? "Paid" : "Pending"}
+        </span>
+      </div>
     </div>
   );
 }
 
-function MemberCardList({ member }) {
+function MemberCardList({ member, onClick }) {
+  const [from] = accentFor(member.name);
+  const isPaid = member.paymentStatus === "completed";
+
   return (
-    <div className="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 hover:shadow-md cursor-default"
+    <div
+      onClick={onClick}
+      className="relative flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 cursor-pointer overflow-hidden"
       style={{
-        background: "rgba(255,255,255,0.85)",
+        background: "rgba(255,255,255,0.92)",
         border: "1.5px solid rgba(78,174,229,0.15)",
         backdropFilter: "blur(8px)",
-      }}>
-      <Avatar name={member.name} photoURL={member.photo} size={44} />
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = "rgba(78,174,229,0.45)";
+        e.currentTarget.style.transform = "translateX(2px)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = "rgba(78,174,229,0.15)";
+        e.currentTarget.style.transform = "translateX(0)";
+      }}
+    >
+      {/* Left accent bar */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-[3px]"
+        style={{ background: from, borderRadius: "14px 0 0 14px" }}
+      />
+
+      {/* Avatar */}
+      <div
+        className="flex items-center justify-center rounded-xl font-bold select-none overflow-hidden flex-shrink-0 ml-1.5"
+        style={{
+          width: 44, height: 44,
+          fontSize: 14,
+          background: `${from}18`,
+          color: from,
+          border: `1.5px solid ${from}44`,
+        }}
+      >
+        {member.photo
+          ? <img src={member.photo} alt={member.name} className="w-full h-full object-cover" />
+          : initials(member.name)}
+      </div>
+
+      {/* Name + place + phone */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-black text-gray-800 text-sm truncate">{member.name}</p>
-          <span className="text-xs text-gray-400 font-mono hidden sm:inline">{member.memberId}</span>
-        </div>
-        <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-          <FiMapPin size={10} /> {member.place}
+        <p className="text-sm font-bold text-gray-800 truncate leading-tight">
+          {member.name}
         </p>
-      </div>
-      <div className="hidden md:flex flex-col items-end gap-1 text-xs text-gray-400 flex-shrink-0">
-        <span className="flex items-center gap-1"><FiPhone size={10} /> {member.phone}</span>
-        <span className="flex items-center gap-1"><FiHeart size={10} /> {member.bloodGroup}</span>
-      </div>
-      <div className="text-right flex-shrink-0 hidden sm:flex flex-col items-end gap-1">
-        <div className="flex items-center gap-2">
-          <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold"
-            style={{ background: "rgba(155,89,182,0.1)", color: "#534AB7", border: "1px solid rgba(155,89,182,0.2)" }}>
-            {member.gender}
+        <div className="flex items-center justify-between flex-wrap gap-x-3 gap-y-0.5 mt-1">
+          <span className="flex items-center gap-1 text-[11px] text-gray-400">
+            <FiMapPin size={9} /> {member.place}
           </span>
-          <PaymentBadge status={member.paymentStatus} />
+          <span className="hidden flex items-center gap-1 text-[11px] text-gray-400">
+            <FiPhone size={9} /> {member.phone}
+          </span>
         </div>
-        <p className="text-xs text-gray-400 flex items-center gap-1 justify-end">
-          <FiCalendar size={10} /> {fmtDate(member.createdAt)}
-        </p>
+      </div>
+
+      {/* Blood + gender — hidden on small screens */}
+      <div className="hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
+        {member.bloodGroup && (
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
+            style={{ background: "#FBEAF0", color: "#72243E", border: "0.5px solid #F4C0D1" }}
+          >
+            {member.bloodGroup}
+          </span>
+        )}
+        <span
+          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
+          style={
+            member.gender === "Female"
+              ? { background: "#EEEDFE", color: "#3C3489", border: "0.5px solid #CECBF6" }
+              : { background: "#E6F1FB", color: "#185FA5", border: "0.5px solid #B5D4F4" }
+          }
+        >
+          {member.gender}
+        </span>
+      </div>
+
+      {/* Payment + ID + date — hidden on mobile */}
+      <div className="hidden md:flex flex-col items-end gap-1 flex-shrink-0">
+        <span
+          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
+          style={
+            isPaid
+              ? { background: "#EAF3DE", color: "#3B6D11", border: "0.5px solid #C0DD97" }
+              : { background: "#FAEEDA", color: "#854F0B", border: "0.5px solid #FAC775" }
+          }
+        >
+          {isPaid ? "Paid" : "Pending"}
+        </span>
+        <span className="text-[10px] text-gray-400 font-mono">{member.memberId}</span>
+        <span className="flex items-center gap-1 text-[10px] text-gray-400">
+          <FiCalendar size={8} /> {fmtDate(member.createdAt)}
+        </span>
       </div>
     </div>
   );
