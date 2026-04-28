@@ -7,6 +7,7 @@ import {
   FiChevronLeft, FiChevronRight,
 } from "react-icons/fi";
 import { getMembers } from "../utils/api";
+import MemberDetailDrawer from "../components/MemberDetailDrawer";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT_PAIRS = [
@@ -16,17 +17,17 @@ const ACCENT_PAIRS = [
 const PAGE_SIZE_OPTIONS = [12, 24, 48];
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const SORT_OPTIONS = [
-  { value: "date_desc",   label: "Newest First" },
-  { value: "date_asc",    label: "Oldest First" },
-  { value: "name_asc",    label: "Name A → Z" },
-  { value: "name_desc",   label: "Name Z → A" },
-  { value: "place_asc",   label: "Place A → Z" },
+  { value: "date_desc", label: "Newest First" },
+  { value: "date_asc", label: "Oldest First" },
+  { value: "name_asc", label: "Name A → Z" },
+  { value: "name_desc", label: "Name Z → A" },
+  { value: "place_asc", label: "Place A → Z" },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const accentFor  = (name) => ACCENT_PAIRS[name.length % ACCENT_PAIRS.length];
-const initials   = (name) => name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-const fmtDate    = (d) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+const accentFor = (name) => ACCENT_PAIRS[name.length % ACCENT_PAIRS.length];
+const initials = (name) => name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+const fmtDate = (d) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function Avatar({ name, photoURL, size = 48 }) {
@@ -49,7 +50,7 @@ function PaymentBadge({ status }) {
     <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold"
       style={{
         background: ok ? "rgba(34,197,94,0.12)" : "rgba(251,146,60,0.12)",
-        color:      ok ? "#15803d" : "#c2410c",
+        color: ok ? "#15803d" : "#c2410c",
         border: `1px solid ${ok ? "rgba(34,197,94,0.25)" : "rgba(251,146,60,0.25)"}`,
       }}>
       {ok ? "Paid" : "Pending"}
@@ -105,10 +106,10 @@ function MemberCardGrid({ member }) {
         <FiMapPin size={10} /> {member.place}
       </p>
       {member.bloodGroup && (
-              <span className="mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-bold"
-        style={{ background: "rgba(233,30,140,0.08)", color: "#993556", border: "1px solid rgba(233,30,140,0.2)" }}>
-        {member.bloodGroup}
-      </span> )}
+        <span className="mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-bold"
+          style={{ background: "rgba(233,30,140,0.08)", color: "#993556", border: "1px solid rgba(233,30,140,0.2)" }}>
+          {member.bloodGroup}
+        </span>)}
 
       <div className="mt-2"><PaymentBadge status={member.paymentStatus} /></div>
     </div>
@@ -259,26 +260,27 @@ function Pagination({ page, totalPages, pageSize, setPage, setPageSize, totalIte
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const MembersPage = () => {
   const navigate = useNavigate();
-  const [members,    setMembers]    = useState([]);
-  const [loading,    setLoading]    = useState(true);
+  const [members, setMembers] = useState([]);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [search,     setSearch]     = useState("");
-  const [gender,     setGender]     = useState("All");
+  const [search, setSearch] = useState("");
+  const [gender, setGender] = useState("All");
   const [bloodGroup, setBloodGroup] = useState("All");
-  const [payment,    setPayment]    = useState("All");
-  const [sort,       setSort]       = useState("date_desc");
-  const [view,       setView]       = useState("grid");
+  const [payment, setPayment] = useState("All");
+  const [sort, setSort] = useState("date_desc");
+  const [view, setView] = useState("grid");
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const [page,       setPage]       = useState(1);
-  const [pageSize,   setPageSize]   = useState(12);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
 
   // Reset to page 1 when filters/sort change
-  const handleSearch     = (v) => { setSearch(v);     setPage(1); };
-  const handleGender     = (v) => { setGender(v);     setPage(1); };
+  const handleSearch = (v) => { setSearch(v); setPage(1); };
+  const handleGender = (v) => { setGender(v); setPage(1); };
   const handleBloodGroup = (v) => { setBloodGroup(v); setPage(1); };
-  const handlePayment    = (v) => { setPayment(v);    setPage(1); };
-  const handleSort       = (v) => { setSort(v);       setPage(1); };
+  const handlePayment = (v) => { setPayment(v); setPage(1); };
+  const handleSort = (v) => { setSort(v); setPage(1); };
 
   const clearFilters = useCallback(() => {
     setSearch(""); setGender("All"); setBloodGroup("All");
@@ -317,14 +319,14 @@ const MembersPage = () => {
         m.phone?.includes(q)
       );
     }
-    if (gender     !== "All") list = list.filter((m) => m.gender     === gender);
+    if (gender !== "All") list = list.filter((m) => m.gender === gender);
     if (bloodGroup !== "All") list = list.filter((m) => m.bloodGroup === bloodGroup);
-    if (payment    !== "All") list = list.filter((m) => m.paymentStatus === payment);
+    if (payment !== "All") list = list.filter((m) => m.paymentStatus === payment);
     list.sort((a, b) => {
-      if (sort === "name_asc")  return a.name?.localeCompare(b.name);
+      if (sort === "name_asc") return a.name?.localeCompare(b.name);
       if (sort === "name_desc") return b.name?.localeCompare(a.name);
       if (sort === "date_desc") return new Date(b.createdAt) - new Date(a.createdAt);
-      if (sort === "date_asc")  return new Date(a.createdAt) - new Date(b.createdAt);
+      if (sort === "date_asc") return new Date(a.createdAt) - new Date(b.createdAt);
       if (sort === "place_asc") return a.place?.localeCompare(b.place);
       return 0;
     });
@@ -332,14 +334,14 @@ const MembersPage = () => {
   }, [members, search, gender, bloodGroup, payment, sort]);
 
   // Paginate
-  const totalPages   = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const safePage     = Math.min(page, totalPages);
-  const paginated    = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   // Stats
-  const totalCount  = members.length;
+  const totalCount = members.length;
   const femaleCount = members.filter((m) => m.gender === "Female").length;
-  const paidCount   = members.filter((m) => m.paymentStatus === "completed").length;
+  const paidCount = members.filter((m) => m.paymentStatus === "completed").length;
 
   // Scroll to top on page change
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [safePage]);
@@ -391,9 +393,9 @@ const MembersPage = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mt-4 sm:mt-5">
-            <StatPill icon={FiUsers}   value={totalCount}  label="Total Members"  color="#4EAEE5" loading={loading} />
-            <StatPill icon={FiUsers}   value={femaleCount} label="Female Members" color="#E91E8C" loading={loading} />
-            <StatPill icon={FiHeart}   value={paidCount}   label="Paid Members"   color="#22c55e" loading={loading} />
+            <StatPill icon={FiUsers} value={totalCount} label="Total Members" color="#4EAEE5" loading={loading} />
+            <StatPill icon={FiUsers} value={femaleCount} label="Female Members" color="#E91E8C" loading={loading} />
+            <StatPill icon={FiHeart} value={paidCount} label="Paid Members" color="#22c55e" loading={loading} />
           </div>
         </div>
       </header>
@@ -424,12 +426,18 @@ const MembersPage = () => {
           <div className="flex gap-2">
             {/* Desktop filters */}
             {[
-              { label: "All Genders",      value: gender,     onChange: handleGender,
-                options: [["All","All Genders"],["Male","Male"],["Female","Female"]], color: "#9B59B6" },
-              { label: "All Blood Groups", value: bloodGroup, onChange: handleBloodGroup,
-                options: [["All","All Blood Groups"], ...BLOOD_GROUPS.map((b) => [b, b])], color: "#E91E8C" },
-              { label: "All Payments",     value: payment,    onChange: handlePayment,
-                options: [["All","All Payments"],["completed","Paid"],["pending","Pending"]], color: "#22c55e" },
+              {
+                label: "All Genders", value: gender, onChange: handleGender,
+                options: [["All", "All Genders"], ["Male", "Male"], ["Female", "Female"]], color: "#9B59B6"
+              },
+              {
+                label: "All Blood Groups", value: bloodGroup, onChange: handleBloodGroup,
+                options: [["All", "All Blood Groups"], ...BLOOD_GROUPS.map((b) => [b, b])], color: "#E91E8C"
+              },
+              {
+                label: "All Payments", value: payment, onChange: handlePayment,
+                options: [["All", "All Payments"], ["completed", "Paid"], ["failed", "Pending"]], color: "#22c55e"
+              },
             ].map(({ label, value, onChange, options, color }) => (
               <div key={label} className="relative hidden sm:block">
                 <select value={value} onChange={(e) => onChange(e.target.value)}
@@ -486,12 +494,18 @@ const MembersPage = () => {
         {filterOpen && (
           <div className="sm:hidden max-w-6xl mx-auto mt-3 grid grid-cols-2 gap-2">
             {[
-              { label: "Gender",      value: gender,     onChange: handleGender,
-                options: [["All","All Genders"],["Male","Male"],["Female","Female"]] },
-              { label: "Blood Group", value: bloodGroup, onChange: handleBloodGroup,
-                options: [["All","All Blood Groups"], ...BLOOD_GROUPS.map((b) => [b, b])] },
-              { label: "Payment",     value: payment,    onChange: handlePayment,
-                options: [["All","All Payments"],["completed","Paid"],["pending","Pending"]] },
+              {
+                label: "Gender", value: gender, onChange: handleGender,
+                options: [["All", "All Genders"], ["Male", "Male"], ["Female", "Female"]]
+              },
+              {
+                label: "Blood Group", value: bloodGroup, onChange: handleBloodGroup,
+                options: [["All", "All Blood Groups"], ...BLOOD_GROUPS.map((b) => [b, b])]
+              },
+              {
+                label: "Payment", value: payment, onChange: handlePayment,
+                options: [["All", "All Payments"], ["completed", "Paid"], ["pending", "Pending"]]
+              },
             ].map(({ label, value, onChange, options }) => (
               <div key={label} className="relative">
                 <select value={value} onChange={(e) => onChange(e.target.value)}
@@ -523,9 +537,9 @@ const MembersPage = () => {
             <p className="text-sm font-semibold text-gray-500">
               {loading
                 ? <span className="inline-flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full border-2 border-blue-300 border-t-blue-500 animate-spin inline-block" />
-                    Loading members…
-                  </span>
+                  <span className="w-4 h-4 rounded-full border-2 border-blue-300 border-t-blue-500 animate-spin inline-block" />
+                  Loading members…
+                </span>
                 : filtered.length === 0
                   ? "No members found"
                   : `${filtered.length} of ${totalCount} members`}
@@ -599,14 +613,22 @@ const MembersPage = () => {
           {/* Grid view */}
           {!loading && view === "grid" && paginated.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {paginated.map((m) => <MemberCardGrid key={m._id} member={m}/>)}
+              {paginated.map((m) => (
+                <div key={m._id} onClick={() => setSelectedMember(m)} className="cursor-pointer">
+                  <MemberCardGrid member={m} />
+                </div>
+              ))}
             </div>
           )}
 
           {/* List view */}
           {!loading && view === "list" && paginated.length > 0 && (
             <div className="flex flex-col gap-2.5">
-              {paginated.map((m) => <MemberCardList key={m._id} member={m} />)}
+              {paginated.map((m) => (
+                <div key={m._id} onClick={() => setSelectedMember(m)} className="cursor-pointer">
+                  <MemberCardList member={m} />
+                </div>
+              ))}
             </div>
           )}
 
@@ -624,6 +646,10 @@ const MembersPage = () => {
           )}
         </div>
       </main>
+
+      {/* member detail drawer */}
+      <MemberDetailDrawer member={selectedMember} onClose={() => setSelectedMember(null)} />
+
     </div>
   );
 };
