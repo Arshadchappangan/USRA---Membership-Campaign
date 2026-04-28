@@ -37,4 +37,7 @@ export const paymentAPI = {
 export const getMembers = (page = 1, limit = 20) =>
   api.get(`/members?page=${page}&limit=${limit}`);
 
+export const updateMember = (id, data) =>
+  api.patch(`/members/${id}`, data).then((r) => r.data);
+
 export default api;
