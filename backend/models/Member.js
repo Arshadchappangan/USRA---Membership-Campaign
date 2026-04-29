@@ -21,6 +21,10 @@ const memberSchema = new mongoose.Schema({
     required: [true, 'Gender is required'],
     enum: { values: ['Male', 'Female', 'Other'], message: 'Invalid gender' }
   },
+  houseName: {
+    type: String,
+    trim: true
+  },
   father: {
     type: String,
     required: [true, "Father's name is required"],
@@ -35,6 +39,19 @@ const memberSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Place is required'],
     trim: true
+  },
+  maritalStatus: {
+    type: String,
+    enum: { values: ['Single', 'Married', 'Divorced', 'Widowed'], message: 'Invalid marital status' }
+  },
+  spouse: {
+    type: String,
+    trim: true,
+    required: function() { return this.maritalStatus === 'Married'; }
+  },
+  bio: {
+    type: String,
+    trim: true,
   },
   bloodGroup: {
     type: String,

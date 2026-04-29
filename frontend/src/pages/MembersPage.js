@@ -7,7 +7,7 @@ import {
   FiChevronLeft, FiChevronRight,
 } from "react-icons/fi";
 import { getMembers } from "../utils/api";
-import MemberDetailDrawer from "../components/MemberDetailDrawer";
+import MemberDetailModal from "../components/MemberDetailDrawer";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT_PAIRS = [
@@ -778,8 +778,15 @@ const MembersPage = () => {
         </div>
       </main>
 
-      {/* member detail drawer */}
-      <MemberDetailDrawer member={selectedMember} onClose={() => setSelectedMember(null)} />
+      {/* member detail modal */}
+      <MemberDetailModal
+        member={selectedMember}
+        onClose={() => setSelectedMember(null)}
+        onUpdate={async (id, data) => {
+          await updateMember(id, data);
+          setMembers((prev) => prev.map((m) => m._id === id ? { ...m, ...data } : m));
+        }}
+      />
 
     </div>
   );

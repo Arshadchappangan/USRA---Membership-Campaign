@@ -91,7 +91,10 @@ router.post('/', upload.single('photo'), memberValidation, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Profile photo is required' });
     }
 
-    const memberId = `USRA-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    // Generate unique memberId like USRA-0001, USRA-0002, etc.
+    const lastMember = await Member.findOne({ memberId: { $regex: /^USRA-\d{4}$/ } }).sort({ memberId: -1 });
+    const lastNumber = lastMember ? parseInt(lastMember.memberId.split('-')[1], 10) : 0;
+    const memberId = `USRA-${String(lastNumber + 1).padStart(4, '0')}`;
 
     const memberPayload = {
       memberId,

@@ -2,8 +2,10 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { MembershipProvider } from './context/MembershipContext';
+import { AuthProvider } from './context/AuthContext';
 
 import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PhotoPage from './pages/PhotoPage';
 import ConfirmPage from './pages/ConfirmPage';
@@ -42,15 +44,18 @@ const AppContent = () => {
   return (
     <>
       <ScrollToTop />
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/photo" element={<PhotoPage />} />
-        <Route path="/confirm" element={<ConfirmPage />} />
-        <Route path="/success" element={<SuccessPage />} />
-        <Route path="/members" element={<MembersPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/photo" element={<PhotoPage />} />
+          <Route path="/confirm" element={<ConfirmPage />} />
+          <Route path="/success" element={<SuccessPage />} />
+          <Route path="/members" element={<MembersPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </AuthProvider>
     </>
   );
 };
