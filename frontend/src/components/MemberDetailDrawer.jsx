@@ -319,11 +319,6 @@ export default function MemberDetailDrawer({ member, onClose }) {
             style={{ border: "1.5px solid rgba(78,174,229,0.18)" }}>
             Close
           </button>
-          <a href={`tel:${member.phone}`}
-            className="flex-1 py-3 rounded-2xl text-sm font-bold text-white text-center flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95"
-            style={{ background: `linear-gradient(135deg,${from},${to})`, boxShadow: `0 4px 14px ${from}40` }}>
-            <FiPhone size={14} /> Call Member
-          </a>
         </div>
       </div>
     </>

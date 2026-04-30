@@ -8,6 +8,7 @@ import {
 } from "react-icons/fi";
 import { getMembers } from "../utils/api";
 import MemberDetailModal from "../components/MemberDetailDrawer";
+import Navbar from "../components/Navbar";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT_PAIRS = [
@@ -503,7 +504,7 @@ const MembersPage = () => {
               <h1 className="text-3xl sm:text-4xl font-black text-gray-800 leading-tight">
                 Our <span className="gradient-text">Members</span>
               </h1>
-              <p className="text-gray-500 text-sm mt-1">USRA Membership Campaign 2026</p>
+              <p className="text-gray-500 text-sm mt-1">Search and manage our member directory</p>
             </div>
 
             {/* View toggle */}
