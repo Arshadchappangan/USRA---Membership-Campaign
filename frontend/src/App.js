@@ -11,6 +11,7 @@ import PhotoPage from './pages/PhotoPage';
 import ConfirmPage from './pages/ConfirmPage';
 import SuccessPage from './pages/SuccessPage';
 import MembersPage from './pages/MembersPage';
+import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Load Razorpay script globally
@@ -53,6 +54,7 @@ const AppContent = () => {
           <Route path="/confirm" element={<ConfirmPage />} />
           <Route path="/success" element={<SuccessPage />} />
           <Route path="/members" element={<MembersPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </AuthProvider>

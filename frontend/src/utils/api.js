@@ -45,6 +45,8 @@ export const membersAPI = {
   getById: (id) => api.get(`/members/${id}`),
 };
 
+export const getMemberById = (id) => api.get(`/members/${id}`);
+
 // Pagination
 export const getMembers = (page = 1, limit = 20) =>
   api.get("/members", { params: { page, limit } });

@@ -7,6 +7,7 @@ import { LoadingScreen } from '../components/LoadingScreen';
 import usraLogo from '../assets/usra-logo.png';
 import usraRemovebg from '../assets/USRA-removebg.png';
 import { getMembers } from '../utils/api';
+import Navbar from '../components/Navbar';
 
 const features = [
   { icon: FiUsers, title: 'Community', desc: 'Connecting passionate individuals who care about making a difference', color: 'from-blue-400 to-blue-600' },
@@ -58,6 +59,7 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero overflow-hidden">
+      <Navbar transparent={true} />
       {/* Decorative blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-20 animate-spin-slow"
@@ -68,28 +70,9 @@ const LandingPage = () => {
           style={{ background: 'radial-gradient(circle, #9B59B6, transparent)' }} />
       </div>
 
-      {/* Header */}
-      <header className="relative z-10 px-4 py-5">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={usraRemovebg} alt="USRA" className="h-12 w-12 object-contain drop-shadow-lg" />
-            <div>
-              <h1 className="text-xl font-black text-gray-800 tracking-tight">USRA</h1>
-              <p className="text-xs text-gray-500 font-medium">United Service for Relational Amalgamation</p>
-            </div>
-          </div>
-          <button
-            onClick={() => navigate('/register')}
-            className="hidden sm:flex btn-primary items-center gap-2 text-sm"
-            style={{ padding: '10px 20px' }}
-          >
-            Join Now <FiArrowRight />
-          </button>
-        </div>
-      </header>
 
       {/* Hero Section */}
-      <section ref={heroRef} className="relative z-10 px-4 pt-8 pb-16 text-center">
+      <section ref={heroRef} className="relative z-10 px-4 pt-24 pb-16 text-center">
         <div className="max-w-4xl mx-auto">
           {/* Campaign Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-6"
