@@ -8,6 +8,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
 const Member = require('../models/Member');
+const { requireAuth, requireSelfOrAdmin } = require('../middleware/auth');
 
 
 cloudinary.config({
@@ -25,17 +26,6 @@ const storage = new CloudinaryStorage({
   },
 });
 
-// Multer config — used for the combined create+photo endpoint
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     const uploadDir = path.join(__dirname, '../uploads');
-//     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-//     cb(null, uploadDir);
-//   },
-//   filename: (req, file, cb) => {
-//     cb(null, `${uuidv4()}-${Date.now()}${path.extname(file.originalname)}`);
-//   }
-// });
 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|webp/;
@@ -72,6 +62,21 @@ const memberValidation = [
     .isEmail()
     .withMessage('Enter valid email')
     .normalizeEmail()
+];
+
+const SELF_UPDATABLE = [
+  // personal
+  'dob', 'gender', 'bloodGroup', 'father', 'mother',
+  'maritalStatus', 'spouse', 'spousePhone', 'spouseJob', 'children', 'bio',
+  // contact
+  'phone', 'email', 'place', 'houseName',
+  // career
+  'employmentType', 'sector', 'organisation', 'jobTitle', 'jobLocation',
+  'annualIncome', 'skills',
+  // education
+  'highestQualification', 'educations',
+  // experience
+  'experiences',
 ];
 
 // POST /api/members — Create member WITH photo in one shot (called from ConfirmPage)
@@ -190,6 +195,46 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
+// ─── PATCH /api/members/:id — update profile (requires auth, self or admin) ──
+router.patch('/:id', requireAuth, requireSelfOrAdmin, async (req, res) => {
+  try {
+    // Build update from whitelisted fields only
+    const update = {};
+    SELF_UPDATABLE.forEach(key => {
+      if (req.body[key] !== undefined) update[key] = req.body[key];
+    });
+ 
+    // Coerce annualIncome to Number | null
+    if (update.annualIncome !== undefined) {
+      const parsed = Number(update.annualIncome);
+      update.annualIncome = (update.annualIncome === '' || isNaN(parsed)) ? null : parsed;
+    }
+ 
+    // Trim top-level string fields
+    Object.keys(update).forEach(k => {
+      if (typeof update[k] === 'string') update[k] = update[k].trim();
+    });
+ 
+    const updated = await Member.findByIdAndUpdate(
+      req.params.id,
+      { $set: update },
+      { new: true, runValidators: true }
+    ).select('-razorpayOrderId -razorpayPaymentId -razorpaySignature -__v');
+ 
+    if (!updated) return res.status(404).json({ success: false, message: 'Member not found.' });
+ 
+    return res.json({ success: true, data: updated });
+  } catch (err) {
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ success: false, message: messages.join(', ') });
+    }
+    console.error('PATCH /members/:id error:', err);
+    return res.status(500).json({ success: false, message: 'Update failed. Please try again.' });
   }
 });
 

@@ -1,4 +1,9 @@
 require('dotenv').config();
+
+const authRoutes = require("./routes/auth");
+const memberRoutes = require("./routes/members");
+const paymentRoutes = require("./routes/payment");
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -20,9 +25,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 
 // Routes
-app.use('/api/members', require('./routes/members'));
-app.use('/api/payment', require('./routes/payment'));
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/members', memberRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/auth', authRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
