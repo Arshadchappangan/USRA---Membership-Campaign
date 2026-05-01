@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FiUser, FiCalendar, FiLogIn, FiLoader, FiEye, FiEyeOff, FiAlertCircle, FiShield } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
+import logo from '../assets/USRA-removebg.png';
 
 // ─── Floating label input ──────────────────────────────────────────────────────
 function FloatInput({ id, label, value, onChange, type = "text", icon: Icon, error, autoFocus }) {
@@ -169,12 +170,8 @@ export default function LoginPage() {
               <div className="fade-up-1 flex flex-col items-center mb-8">
                 <div
                   className="flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
-                  style={{
-                    background: "linear-gradient(135deg, #4EAEE5, #9B59B6)",
-                    boxShadow: "0 8px 24px rgba(78,174,229,0.35)",
-                  }}
                 >
-                  <FiShield size={28} color="#fff" />
+                  <img src={logo} alt="USRA Logo" style={{ width: "100%", height: "100%" }} />
                 </div>
                 <h1 className="text-2xl font-black text-gray-900 tracking-tight">USRA Member Portal</h1>
                 <p className="text-sm text-gray-400 font-medium mt-1">Sign in to access your profile</p>
@@ -269,7 +266,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <p className="text-center text-xs text-gray-400 mt-5 font-medium">
-            USRA Membership Campaign 2026 · All rights reserved
+            USRA · All rights reserved
           </p>
         </div>
       </div>

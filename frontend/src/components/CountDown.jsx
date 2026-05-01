@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 const pad = (n) => String(n).padStart(2, "0");
 
 function getTimeLeft() {
-  const diff = new Date("2026-05-01T00:00:00") - new Date();
+  const diff = new Date("2026-05-16T00:00:00") - new Date();
   if (diff <= 0) return null;
   return {
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),
@@ -46,7 +46,7 @@ export function Countdown() {
         className="text-center text-sm font-bold tracking-widest uppercase mb-5"
         style={{ color: "#9B59B6", letterSpacing: "0.2em" }}
       >
-        Campaign Starts In
+        Campaign Ends In
       </p>
 
       {/* Countdown cards row */}
