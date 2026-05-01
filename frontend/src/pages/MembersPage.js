@@ -15,7 +15,7 @@ const ACCENT_PAIRS = [
   ["#4EAEE5", "#9B59B6"], ["#9B59B6", "#E91E8C"], ["#E91E8C", "#4EAEE5"],
   ["#4EAEE5", "#43B89C"], ["#F7971E", "#E91E8C"], ["#43B89C", "#9B59B6"],
 ];
-const PAGE_SIZE_OPTIONS = [12, 24, 48];
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const SORT_OPTIONS = [
   { value: "date_desc", label: "Newest First" },
@@ -305,86 +305,170 @@ function StatPill({ icon: Icon, value, label, color, loading }) {
 }
 
 // ── Pagination ─────────────────────────────────────────────────────────────────
+
+
 function Pagination({ page, totalPages, pageSize, setPage, setPageSize, totalItems, visibleCount }) {
   const pages = useMemo(() => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (page <= 4) return [1, 2, 3, 4, 5, "…", totalPages];
-    if (page >= totalPages - 3) return [1, "…", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [1, "…", page - 1, page, page + 1, "…", totalPages];
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (page <= 3) return [1, 2, 3, "…", totalPages];
+    if (page >= totalPages - 2) return [1, "…", totalPages - 2, totalPages - 1, totalPages];
+    return [1, "…", page, "…", totalPages];
   }, [page, totalPages]);
 
   if (totalPages <= 1 && PAGE_SIZE_OPTIONS.every((s) => s >= totalItems)) return null;
 
-  return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6"
-      style={{ borderTop: "1.5px solid rgba(78,174,229,0.12)" }}>
+  const btnBase = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "10px",
+    fontSize: "13px",
+    fontWeight: "bold",
+    transition: "all 0.15s",
+    cursor: "pointer",
+    flexShrink: 0,
+  };
 
-      {/* Page size selector */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <span>Show</span>
-        <div className="flex gap-1">
-          {PAGE_SIZE_OPTIONS.map((s) => (
-            <button key={s} onClick={() => { setPageSize(s); setPage(1); }}
-              className="w-9 h-9 rounded-xl text-sm font-bold transition-all duration-150"
-              style={{
-                background: pageSize === s ? "linear-gradient(135deg,#4EAEE5,#9B59B6)" : "rgba(255,255,255,0.8)",
-                color: pageSize === s ? "#fff" : "#6b7280",
-                border: pageSize === s ? "none" : "1.5px solid rgba(78,174,229,0.2)",
-              }}>
-              {s}
-            </button>
-          ))}
+  const activeBtnStyle = {
+    ...btnBase,
+    width: 34,
+    height: 34,
+    background: "linear-gradient(135deg,#4EAEE5,#9B59B6)",
+    color: "#fff",
+    border: "none",
+  };
+
+  const inactiveBtnStyle = {
+    ...btnBase,
+    width: 34,
+    height: 34,
+    background: "rgba(255,255,255,0.8)",
+    color: "#374151",
+    border: "1.5px solid rgba(78,174,229,0.2)",
+  };
+
+  const disabledBtnStyle = {
+    ...inactiveBtnStyle,
+    color: "#d1d5db",
+    cursor: "not-allowed",
+  };
+
+  return (
+    <div
+      style={{
+        borderTop: "1.5px solid rgba(78,174,229,0.12)",
+        marginTop: "2rem",
+        paddingTop: "1rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
+      }}
+    >
+      {/* Row 1: Page size selector + Range info side by side */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "8px",
+        }}
+      >
+        {/* Page size */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+          <span style={{ fontSize: "13px", color: "#6b7280", whiteSpace: "nowrap" }}>Show</span>
+          <div style={{ display: "flex", gap: "4px" }}>
+            {PAGE_SIZE_OPTIONS.map((s) => (
+              <button
+                key={s}
+                onClick={() => { setPageSize(s); setPage(1); }}
+                style={
+                  pageSize === s
+                    ? { ...activeBtnStyle, width: 36, height: 34 }
+                    : { ...inactiveBtnStyle, width: 36, height: 34 }
+                }
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+          <span style={{ fontSize: "13px", color: "#6b7280", whiteSpace: "nowrap" }}>/ page</span>
         </div>
-        <span>per page</span>
+
+        {/* Range info */}
+        <p style={{ fontSize: "12px", color: "#9ca3af", fontWeight: 500, margin: 0, whiteSpace: "nowrap" }}>
+          {visibleCount === 0
+            ? "No results"
+            : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, totalItems)} of ${totalItems}`}
+        </p>
       </div>
 
-      {/* Page numbers */}
+      {/* Row 2: Page number navigation — centered */}
       {totalPages > 1 && (
-        <div className="flex items-center gap-1">
-          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-            style={{
-              background: "rgba(255,255,255,0.8)",
-              border: "1.5px solid rgba(78,174,229,0.2)",
-              color: page === 1 ? "#d1d5db" : "#374151",
-              cursor: page === 1 ? "not-allowed" : "pointer",
-            }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", flexWrap: "wrap" }}>
+          {/* Prev */}
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            style={page === 1 ? disabledBtnStyle : inactiveBtnStyle}
+          >
             <FiChevronLeft size={15} />
           </button>
 
-          {pages.map((p, i) =>
-            p === "…" ? (
-              <span key={`ellipsis-${i}`} className="w-9 h-9 flex items-center justify-center text-sm text-gray-400">…</span>
-            ) : (
-              <button key={p} onClick={() => setPage(p)}
-                className="w-9 h-9 rounded-xl text-sm font-bold transition-all duration-150"
-                style={{
-                  background: page === p ? "linear-gradient(135deg,#4EAEE5,#9B59B6)" : "rgba(255,255,255,0.8)",
-                  color: page === p ? "#fff" : "#374151",
-                  border: page === p ? "none" : "1.5px solid rgba(78,174,229,0.2)",
-                }}>
-                {p}
-              </button>
-            )
-          )}
+          {/* Mobile: show only current/total */}
+          <div className="pagination-mobile" style={{ display: "none", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: "13px", color: "#374151", fontWeight: "bold" }}>{page}</span>
+            <span style={{ fontSize: "12px", color: "#9ca3af" }}>of {totalPages}</span>
+          </div>
 
-          <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-            style={{
-              background: "rgba(255,255,255,0.8)",
-              border: "1.5px solid rgba(78,174,229,0.2)",
-              color: page === totalPages ? "#d1d5db" : "#374151",
-              cursor: page === totalPages ? "not-allowed" : "pointer",
-            }}>
+          {/* Desktop: show page buttons */}
+          <div className="pagination-desktop" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            {pages.map((p, i) =>
+              p === "…" ? (
+                <span
+                  key={`ellipsis-${i}`}
+                  style={{
+                    width: 30,
+                    height: 34,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "13px",
+                    color: "#9ca3af",
+                  }}
+                >
+                  …
+                </span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  style={page === p ? activeBtnStyle : inactiveBtnStyle}
+                >
+                  {p}
+                </button>
+              )
+            )}
+          </div>
+
+          {/* Next */}
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            style={page === totalPages ? disabledBtnStyle : inactiveBtnStyle}
+          >
             <FiChevronRight size={15} />
           </button>
         </div>
       )}
 
-      {/* Range info */}
-      <p className="text-xs text-gray-400 font-medium">
-        {visibleCount === 0 ? "No results" : `${((page - 1) * pageSize) + 1}–${Math.min(page * pageSize, totalItems)} of ${totalItems}`}
-      </p>
+      {/* Responsive CSS */}
+      <style>{`
+        @media (max-width: 480px) {
+          .pagination-mobile { display: flex !important; }
+          .pagination-desktop { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 }
