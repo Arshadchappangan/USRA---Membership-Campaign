@@ -1,41 +1,30 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { FiDownload, FiShare2, FiCheck, FiHome, FiCopy, FiCreditCard } from 'react-icons/fi';
+import { FiDownload, FiShare2, FiCheck, FiHome, FiCreditCard } from 'react-icons/fi';
 import { useMembership } from '../context/MembershipContext';
 import StepIndicator from '../components/StepIndicator';
 import usraLogo from '../assets/usra-logo.png';
 import posterTemplate from '../assets/poster-template.png';
-import { generateCard } from '../utils/generateCard';
-import { generatePoster } from '../utils/generatePoster';
 import { usePosterGenerator } from '../hooks/usePosterGenerator';
 import { useCardGenerator } from '../hooks/useCardGenerator';
-
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 const SuccessPage = () => {
   const navigate = useNavigate();
   const { memberData, memberId, memberDbId, photoPreviewUrl, paymentData, resetAll } = useMembership();
-  const {
-    posterDataUrl,
-    posterGenerated,
-    generatingPoster,
-    generatePoster,
-  } = usePosterGenerator();
 
-  const {
-    cardDataUrl,
-    cardGenerated,
-    generatingCard,
-    generateCard,
-  } = useCardGenerator();
+  const { posterDataUrl, posterGenerated, generatingPoster, generatePoster } = usePosterGenerator();
+  const { cardDataUrl, cardGenerated, generatingCard, generateCard } = useCardGenerator();
 
   const canvasRef = useRef(null);
   const confettiRef = useRef(null);
 
-
-  if (!memberId || !paymentData) { navigate('/'); return null; }
+  // ── Guard: redirect if landed here without payment ─────────────────────────
+  useEffect(() => {
+    if (!memberId || !paymentData) {
+      navigate('/', { replace: true });
+    }
+  }, [memberId, paymentData, navigate]);
 
   // ── Confetti ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -65,7 +54,9 @@ const SuccessPage = () => {
         p.y += (Math.cos(angle + p.d) + 1.2) * 1.5;
         p.x += Math.sin(angle) * 1.5;
         p.opacity -= 0.003;
-        if (p.opacity <= 0) particles[i] = { ...p, y: -10, x: Math.random() * canvas.width, opacity: 1 };
+        if (p.opacity <= 0) {
+          particles[i] = { ...p, y: -10, x: Math.random() * canvas.width, opacity: 1 };
+        }
         ctx.beginPath();
         ctx.lineWidth = p.r;
         ctx.strokeStyle = p.color;
@@ -82,8 +73,10 @@ const SuccessPage = () => {
     return () => { cancelAnimationFrame(animId); clearTimeout(t); };
   }, []);
 
-
+  // ── Auto-generate card + poster after payment ──────────────────────────────
   useEffect(() => {
+    if (!memberId || !paymentData) return; // don't run if guard will redirect
+
     const t1 = setTimeout(() => {
       generatePoster({
         memberData,
@@ -102,16 +95,17 @@ const SuccessPage = () => {
       });
     }, 1200);
 
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [generatePoster, generateCard, memberData]);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [generatePoster, generateCard, memberData, memberId, paymentData, memberDbId, photoPreviewUrl]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const download = (dataUrl, filename) => {
-    const a = document.createElement('a'); a.download = filename; a.href = dataUrl; a.click();
+    const a = document.createElement('a');
+    a.download = filename;
+    a.href = dataUrl;
+    a.click();
   };
+
   const share = async (dataUrl, filename, text) => {
     try {
       const blob = await (await fetch(dataUrl)).blob();
@@ -123,13 +117,18 @@ const SuccessPage = () => {
         download(dataUrl, filename);
         toast.success('Downloaded for sharing!');
       }
-    } catch (e) { if (e.name !== 'AbortError') download(dataUrl, filename); }
+    } catch (e) {
+      if (e.name !== 'AbortError') download(dataUrl, filename);
+    }
   };
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(memberDbId || paymentData?.memberDbId || '');
     toast.success('Member ID copied!');
   };
+
+  // ── While guard is redirecting, render nothing ─────────────────────────────
+  if (!memberId || !paymentData) return null;
 
   const safeName = (memberData?.name || 'member').replace(/\s+/g, '-');
 
@@ -186,9 +185,8 @@ const SuccessPage = () => {
               </span>
             )}
           </h3>
-          <p className="text-xs text-gray-400 mb-4">Your digital ID card </p>
+          <p className="text-xs text-gray-400 mb-4">Your digital ID card</p>
 
-          {/* Card preview */}
           <div className="rounded-2xl overflow-hidden shadow-xl bg-[#0F1C35] mb-5">
             {cardDataUrl ? (
               <img src={cardDataUrl} alt="Membership Card" className="w-full" />
@@ -206,7 +204,7 @@ const SuccessPage = () => {
             <button
               onClick={() => cardDataUrl && download(cardDataUrl, `USRA-Card-${safeName}.png`)}
               disabled={!cardGenerated}
-              className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-white text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-white text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,#0F1C35,#4EAEE5)' }}
             >
               <FiDownload className="w-4 h-4" /> Download
@@ -214,7 +212,7 @@ const SuccessPage = () => {
             <button
               onClick={() => cardDataUrl && share(cardDataUrl, `USRA-Card-${safeName}.png`, 'My USRA Membership Card 2026 #USRA2026')}
               disabled={!cardGenerated}
-              className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-white text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-white text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,#9B59B6,#E91E8C)' }}
             >
               <FiShare2 className="w-4 h-4" /> Share
@@ -257,7 +255,7 @@ const SuccessPage = () => {
             <button
               onClick={() => posterDataUrl && download(posterDataUrl, `USRA-Poster-${safeName}.png`)}
               disabled={!posterGenerated}
-              className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-white text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-white text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,#4EAEE5,#9B59B6)' }}
             >
               <FiDownload className="w-4 h-4" /> Download
@@ -265,7 +263,7 @@ const SuccessPage = () => {
             <button
               onClick={() => posterDataUrl && share(posterDataUrl, `USRA-Poster-${safeName}.png`, 'I joined the USRA Membership Campaign 2026! ഞാനും പങ്കാളിയായി... #USRA2026')}
               disabled={!posterGenerated}
-              className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-white text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-white text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,#E91E8C,#9B59B6)' }}
             >
               <FiShare2 className="w-4 h-4" /> Share

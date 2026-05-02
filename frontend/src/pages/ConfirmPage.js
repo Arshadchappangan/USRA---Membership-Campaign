@@ -3,17 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   FiUser, FiCalendar, FiMapPin, FiPhone, FiMail,
-  FiArrowLeft, FiEdit, FiCreditCard, FiCheck, FiLoader
+  FiArrowLeft, FiEdit, FiCreditCard,
 } from 'react-icons/fi';
 import { MdBloodtype } from 'react-icons/md';
 import { useMembership } from '../context/MembershipContext';
-import { membersAPI, paymentAPI } from '../utils/api';
+import { membersAPI } from '../utils/api';
+import { useRazorpayPayment } from '../hooks/useRazorpayPayment';
 import StepIndicator from '../components/StepIndicator';
 import usraLogo from '../assets/usra-logo.png';
 import { format } from 'date-fns';
 
-const RAZORPAY_KEY = process.env.REACT_APP_RAZORPAY_KEY_ID;
-
+// ─── Detail row ────────────────────────────────────────────────────────────────
 const DetailRow = ({ icon: Icon, label, value, color = 'text-usra-blue' }) => (
   <div className="flex items-start gap-3 py-3 border-b border-gray-100 last:border-0">
     <div className={`p-2 rounded-lg bg-gray-50 ${color} mt-0.5`}>
@@ -26,33 +26,38 @@ const DetailRow = ({ icon: Icon, label, value, color = 'text-usra-blue' }) => (
   </div>
 );
 
+// ─── ConfirmPage ───────────────────────────────────────────────────────────────
 const ConfirmPage = () => {
   const navigate = useNavigate();
   const {
     memberData, photoBlob, photoPreviewUrl,
     setMemberId, setMemberDbId, setPhotoUrl,
-    setPaymentData
   } = useMembership();
 
-  const [savingStatus, setSavingStatus] = useState('idle'); // idle | saving | saved | paying
-  const [savedMemberId, setSavedMemberId] = useState(null); // internal MongoDB _id for payment
+  // Local save state (separate concern from payment)
+  const [saveStatus, setSaveStatus] = useState('idle'); // idle | saving | saved
+  const [savedMongoId, setSavedMongoId] = useState(null);
 
-  // Redirect if data missing
+  // Payment hook
+  const { openPayment, paymentStatus, isPaymentLoading } = useRazorpayPayment();
+
+  // ── Guards ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!memberData?.name) {
-      navigate('/register');
-    } else if (!photoBlob) {
-      navigate('/photo');
-    }
+    if (!memberData?.name) navigate('/register');
+    else if (!photoBlob) navigate('/photo');
   }, [memberData, photoBlob, navigate]);
 
+  // ── Helpers ─────────────────────────────────────────────────────────────────
   const formattedDob = memberData?.dob
     ? (() => { try { return format(new Date(memberData.dob), 'dd MMMM yyyy'); } catch { return memberData.dob; } })()
     : '';
 
-  // Step 1: Save member + photo to DB
+  const isSaving = saveStatus === 'saving';
+  const isLoading = isSaving || isPaymentLoading;
+
+  // ── Step 1: persist member + photo ─────────────────────────────────────────
   const saveToDatabase = async () => {
-    setSavingStatus('saving');
+    setSaveStatus('saving');
     try {
       const formData = new FormData();
       formData.append('photo', photoBlob, 'photo.jpg');
@@ -62,115 +67,51 @@ const ConfirmPage = () => {
       formData.append('father', memberData.father);
       formData.append('mother', memberData.mother);
       formData.append('place', memberData.place);
-      if (memberData.phone && memberData.phone.trim() !== '') {
-        formData.append('phone', memberData.phone);
-      }
-      if (memberData.email && memberData.email.trim() !== '') {
-        formData.append('email', memberData.email);
-      }
-      if (memberData.bloodGroup && memberData.bloodGroup.trim() !== '') {
-        formData.append('bloodGroup', memberData.bloodGroup);
-      }
+      if (memberData.phone?.trim()) formData.append('phone', memberData.phone);
+      if (memberData.email?.trim()) formData.append('email', memberData.email);
+      if (memberData.bloodGroup?.trim()) formData.append('bloodGroup', memberData.bloodGroup);
 
       const res = await membersAPI.createWithPhoto(formData);
       const { _id, memberId: dbId, photoUrl: pUrl } = res.data;
 
-      // Commit to context
       setMemberId(_id);
       setMemberDbId(dbId);
       setPhotoUrl(pUrl);
-      setSavedMemberId(_id);
-      setSavingStatus('saved');
+      setSavedMongoId(_id);
+      setSaveStatus('saved');
       return _id;
     } catch (error) {
-      setSavingStatus('idle');
+      setSaveStatus('idle');
       toast.error(error.message || 'Failed to save your details');
       return null;
     }
   };
 
-  // Step 2: Open Razorpay
-  const openPayment = async (mongoId) => {
-    setSavingStatus('paying');
-    try {
-      const orderRes = await paymentAPI.createOrder(mongoId);
-      const { orderId, amount, currency, memberName, memberEmail, memberPhone } = orderRes.data;
-
-      const options = {
-        key: RAZORPAY_KEY,
-        amount,
-        currency,
-        name: 'USRA',
-        description: 'Membership Campaign 2026',
-        order_id: orderId,
-        handler: async (response) => {
-          try {
-            const verifyRes = await paymentAPI.verify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              memberId: mongoId,
-            });
-            if (verifyRes.success) {
-              setPaymentData({
-                paymentId: response.razorpay_payment_id,
-                orderId: response.razorpay_order_id,
-                memberDbId: verifyRes.data.memberDbId,
-              });
-              toast.success('Payment successful! 🎉');
-              navigate('/success');
-            }
-          } catch (err) {
-            toast.error('Payment verification failed. Please contact support.');
-            setSavingStatus('saved');
-          }
-        },
-        prefill: { name: memberName, email: memberEmail, contact: `+91${memberPhone}` },
-        theme: { color: '#4EAEE5' },
-        modal: {
-          ondismiss: async () => {
-            await paymentAPI.markFailed(mongoId).catch(() => { });
-            toast.error('Payment cancelled');
-            setSavingStatus('saved'); // allow retry
-          },
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', async () => {
-        await paymentAPI.markFailed(mongoId).catch(() => { });
-        toast.error('Payment failed. Please try again.');
-        setSavingStatus('saved');
-      });
-      rzp.open();
-    } catch (error) {
-      toast.error(error.message || 'Failed to initiate payment');
-      setSavingStatus('saved');
-    }
-  };
-
-  // Main CTA handler
+  // ── Main CTA ────────────────────────────────────────────────────────────────
   const handleConfirmAndPay = async () => {
-    // If already saved (e.g. after a cancelled payment), go straight to payment
-    if (savingStatus === 'saved' && savedMemberId) {
-      await openPayment(savedMemberId);
+    // If member was already saved (e.g. after a cancelled/failed payment), skip re-saving
+    if (savedMongoId) {
+      await openPayment(savedMongoId);
       return;
     }
     const mongoId = await saveToDatabase();
     if (mongoId) await openPayment(mongoId);
   };
 
-  const isLoading = savingStatus === 'saving' || savingStatus === 'paying';
-
-  const statusLabel = {
-    idle: <><FiCreditCard className="w-5 h-5" /> Confirm & Pay ₹100</>,
-    saving: <><div className="spinner" /> Saving your details...</>,
-    saved: <><FiCreditCard className="w-5 h-5" /> Proceed to Pay ₹100</>,
-    paying: <><div className="spinner" /> Opening Payment...</>,
+  // ── Button label ────────────────────────────────────────────────────────────
+  const buttonLabel = () => {
+    if (isSaving) return <><div className="spinner" /> Saving your details...</>;
+    if (isPaymentLoading) return <><div className="spinner" /> Opening Payment...</>;
+    // After a failed/cancelled payment, invite retry
+    if (paymentStatus === 'failed') return <><FiCreditCard className="w-5 h-5" /> Retry Payment ₹100</>;
+    if (savedMongoId) return <><FiCreditCard className="w-5 h-5" /> Proceed to Pay ₹100</>;
+    return <><FiCreditCard className="w-5 h-5" /> Confirm & Pay ₹100</>;
   };
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gradient-hero">
+      {/* Header */}
       <div className="sticky top-0 z-20 glass border-b border-white/30">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate('/photo')} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
@@ -192,7 +133,6 @@ const ConfirmPage = () => {
           </h2>
           <p className="text-gray-500">Everything looks right? Your data saves only when you tap confirm.</p>
         </div>
-
 
         {/* Photo + Name */}
         <div className="glass rounded-3xl p-6 shadow-card flex flex-col sm:flex-row items-center gap-5">
@@ -229,7 +169,6 @@ const ConfirmPage = () => {
               <FiEdit className="w-4 h-4" /> Edit
             </button>
           </div>
-
           <DetailRow icon={FiUser} label="Full Name" value={memberData?.name} />
           <DetailRow icon={FiCalendar} label="Date of Birth" value={formattedDob} />
           <DetailRow icon={FiUser} label="Gender" value={memberData?.gender} />
@@ -237,12 +176,7 @@ const ConfirmPage = () => {
           <DetailRow icon={FiUser} label="Mother's Name" value={memberData?.mother} />
           <DetailRow icon={FiMapPin} label="Place" value={memberData?.place} color="text-green-600" />
           {memberData?.bloodGroup && (
-            <DetailRow
-              icon={MdBloodtype}
-              label="Blood Group"
-              value={memberData?.bloodGroup}
-              color="text-red-500"
-            />
+            <DetailRow icon={MdBloodtype} label="Blood Group" value={memberData?.bloodGroup} color="text-red-500" />
           )}
           {memberData?.phone && <DetailRow icon={FiPhone} label="Phone" value={`+91 ${memberData.phone}`} />}
           {memberData?.email && <DetailRow icon={FiMail} label="Email" value={memberData.email} />}
@@ -278,12 +212,13 @@ const ConfirmPage = () => {
           </div>
         </div>
 
+        {/* CTA */}
         <button
           onClick={handleConfirmAndPay}
           disabled={isLoading}
           className="btn-primary w-full flex items-center justify-center gap-3 text-lg disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          {statusLabel[savingStatus]}
+          {buttonLabel()}
         </button>
 
         <p className="text-center text-xs text-gray-400 pb-8">

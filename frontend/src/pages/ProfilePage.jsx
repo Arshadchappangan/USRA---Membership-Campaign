@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FiArrowLeft, FiEdit2, FiSave, FiLoader, FiDownload, FiCreditCard, FiImage, FiCheck,
-  FiAlertCircle, FiPhone, FiUser, FiHash, FiUsers, FiBriefcase,
+  FiAlertCircle, FiPhone, FiUser, FiHash, FiUsers, FiBriefcase, FiCheckCircle,
   FiBook, FiAward, FiPlus, FiTrash2, FiChevronDown,
   FiCamera, FiLogOut, FiShield, FiHeart, FiX, FiRefreshCw,
   FiMoreVertical,
@@ -14,61 +14,63 @@ import posterTemplate from "../assets/poster-template.png";
 import usraLogo from "../assets/USRA-removebg.png";
 import { getMemberById, updateMember } from "../utils/api";
 import Navbar from "../components/Navbar";
+import { useRazorpayPayment } from "../hooks/useRazorpayPayment";
+import MembershipPaymentSection from "../components/membershipPaymentSection";
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 const ACCENT_PAIRS = [
   ["#4EAEE5", "#9B59B6"], ["#9B59B6", "#E91E8C"], ["#E91E8C", "#4EAEE5"],
   ["#4EAEE5", "#43B89C"], ["#F7971E", "#E91E8C"], ["#43B89C", "#9B59B6"],
 ];
-const MARITAL_OPTIONS   = ["Single", "Married", "Divorced", "Widowed"];
-const EDUCATION_OPTIONS = ["Below 10th","10th Pass","12th Pass","Diploma","ITI","Graduate","Post Graduate","PhD","Other"];
-const EMPLOYMENT_TYPES  = ["Employed","Self-Employed","Business","Student","Homemaker","Unemployed","Retired"];
-const BLOOD_GROUPS      = ["A+","A-","B+","B-","AB+","AB-","O+","O-","Unknown"];
-const SECTORS           = ["Government","Private","Public Sector","NGO / Non-Profit","Military / Defence","Education","Healthcare","Agriculture","IT / Tech","Finance","Other"];
+const MARITAL_OPTIONS = ["Single", "Married", "Divorced", "Widowed"];
+const EDUCATION_OPTIONS = ["Below 10th", "10th Pass", "12th Pass", "Diploma", "ITI", "Graduate", "Post Graduate", "PhD", "Other"];
+const EMPLOYMENT_TYPES = ["Employed", "Self-Employed", "Business", "Student", "Homemaker", "Unemployed", "Retired"];
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Unknown"];
+const SECTORS = ["Government", "Private", "Public Sector", "NGO / Non-Profit", "Military / Defence", "Education", "Healthcare", "Agriculture", "IT / Tech", "Finance", "Other"];
 
 const SECTIONS = [
-  { key: "personal",   label: "Personal",   icon: FiUser },
-  { key: "bio",        label: "About",      icon: FiUsers },
-  { key: "contact",    label: "Contact",    icon: FiPhone },
-  { key: "career",     label: "Career",     icon: FiBriefcase },
+  { key: "personal", label: "Personal", icon: FiUser },
+  { key: "bio", label: "About", icon: FiUsers },
+  { key: "contact", label: "Contact", icon: FiPhone },
+  { key: "career", label: "Career", icon: FiBriefcase },
   { key: "experience", label: "Experience", icon: FiAward },
-  { key: "education",  label: "Education",  icon: FiBook },
-  { key: "downloads",  label: "Downloads",  icon: FiDownload },
+  { key: "education", label: "Education", icon: FiBook },
+  { key: "downloads", label: "Downloads", icon: FiDownload },
 ];
 
 /* ─── Completion score ───────────────────────────────────────────────────── */
 const computeCompletion = (m, d) => {
   if (!m || !d) return { pct: 0, missing: [] };
   const checks = [
-    { key: "dob",               label: "Date of birth",   val: d.dob },
-    { key: "gender",            label: "Gender",           val: d.gender },
-    { key: "bloodGroup",        label: "Blood group",      val: d.bloodGroup },
-    { key: "phone",             label: "Phone",            val: d.phone },
-    { key: "email",             label: "Email",            val: d.email },
-    { key: "place",             label: "City / Place",     val: d.place },
-    { key: "bio",               label: "About me",         val: d.bio },
-    { key: "employmentType",    label: "Employment type",  val: d.employmentType },
-    { key: "organisation",      label: "Organisation",     val: d.organisation },
-    { key: "jobTitle",          label: "Job title",        val: d.jobTitle },
+    { key: "dob", label: "Date of birth", val: d.dob },
+    { key: "gender", label: "Gender", val: d.gender },
+    { key: "bloodGroup", label: "Blood group", val: d.bloodGroup },
+    { key: "phone", label: "Phone", val: d.phone },
+    { key: "email", label: "Email", val: d.email },
+    { key: "place", label: "City / Place", val: d.place },
+    { key: "bio", label: "About me", val: d.bio },
+    { key: "employmentType", label: "Employment type", val: d.employmentType },
+    { key: "organisation", label: "Organisation", val: d.organisation },
+    { key: "jobTitle", label: "Job title", val: d.jobTitle },
     { key: "highestQualification", label: "Qualification", val: d.highestQualification },
-    { key: "photo",             label: "Profile photo",    val: m.photo },
+    { key: "photo", label: "Profile photo", val: m.photo },
   ];
-  const filled  = checks.filter(c => !!c.val);
+  const filled = checks.filter(c => !!c.val);
   const missing = checks.filter(c => !c.val).map(c => c.label).slice(0, 3);
   return { pct: Math.round((filled.length / checks.length) * 100), missing };
 };
 
 /* ─── Helpers ───────────────────────────────────────────────────────────── */
-const accentFor  = (n = "") => ACCENT_PAIRS[n.length % ACCENT_PAIRS.length];
-const initials   = (n = "") => n.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase();
-const fmtDate    = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+const accentFor = (n = "") => ACCENT_PAIRS[n.length % ACCENT_PAIRS.length];
+const initials = (n = "") => n.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase();
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const toDateInput = (d) => { try { return d ? new Date(d).toISOString().split("T")[0] : ""; } catch { return ""; } };
 
 /* ─── Primitive form components ─────────────────────────────────────────── */
 const focusStyle = { borderColor: "#4EAEE5" };
-const blurStyle  = { borderColor: "rgba(78,174,229,0.2)" };
-const inputBase  = "w-full px-3 py-2.5 rounded-xl text-sm font-medium text-gray-800 outline-none transition-all";
-const inputBg    = { background: "rgba(78,174,229,0.05)", border: "1.5px solid rgba(78,174,229,0.2)" };
+const blurStyle = { borderColor: "rgba(78,174,229,0.2)" };
+const inputBase = "w-full px-3 py-2.5 rounded-xl text-sm font-medium text-gray-800 outline-none transition-all";
+const inputBg = { background: "rgba(78,174,229,0.05)", border: "1.5px solid rgba(78,174,229,0.2)" };
 
 function Input({ value, onChange, placeholder, type = "text" }) {
   return (
@@ -294,7 +296,7 @@ function SectionCard({ id, icon: Icon, title, color = "#4EAEE5", editMode, onTog
             : { background: "rgba(78,174,229,0.08)", color: "#4EAEE5", border: "1px solid rgba(78,174,229,0.2)" }}>
           {saving ? <FiLoader size={12} className="animate-spin" />
             : editMode ? <><FiSave size={12} /><span className="hidden sm:inline"> Save</span></>
-            : <><FiEdit2 size={12} /><span className="hidden sm:inline"> Edit</span></>}
+              : <><FiEdit2 size={12} /><span className="hidden sm:inline"> Edit</span></>}
         </button>
       </div>
       {children}
@@ -313,23 +315,23 @@ function EduCard({ item, index, edit, onChange, onRemove }) {
       )}
       {edit
         ? <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
-            <SelectInput value={item.level} onChange={v => onChange(index, "level", v)} options={EDUCATION_OPTIONS} placeholder="Level" />
-            <Input value={item.field} onChange={v => onChange(index, "field", v)} placeholder="Field / Subject" />
-            <Input value={item.institution} onChange={v => onChange(index, "institution", v)} placeholder="Institution" />
-            <Input value={item.year} onChange={v => onChange(index, "year", v)} placeholder="Year" />
-          </div>
+          <SelectInput value={item.level} onChange={v => onChange(index, "level", v)} options={EDUCATION_OPTIONS} placeholder="Level" />
+          <Input value={item.field} onChange={v => onChange(index, "field", v)} placeholder="Field / Subject" />
+          <Input value={item.institution} onChange={v => onChange(index, "institution", v)} placeholder="Institution" />
+          <Input value={item.year} onChange={v => onChange(index, "year", v)} placeholder="Year" />
+        </div>
         : <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="text-sm font-black text-gray-800">{item.level || "—"}{item.field ? ` · ${item.field}` : ""}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{item.institution || "—"}</p>
-            </div>
-            {item.year && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                style={{ background: "rgba(155,89,182,0.1)", color: "#534AB7", border: "1px solid rgba(155,89,182,0.2)" }}>
-                {item.year}
-              </span>
-            )}
-          </div>}
+          <div>
+            <p className="text-sm font-black text-gray-800">{item.level || "—"}{item.field ? ` · ${item.field}` : ""}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{item.institution || "—"}</p>
+          </div>
+          {item.year && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+              style={{ background: "rgba(155,89,182,0.1)", color: "#534AB7", border: "1px solid rgba(155,89,182,0.2)" }}>
+              {item.year}
+            </span>
+          )}
+        </div>}
     </div>
   );
 }
@@ -345,29 +347,29 @@ function ExpCard({ item, index, edit, onChange, onRemove }) {
       )}
       {edit
         ? <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
-            <Input value={item.title} onChange={v => onChange(index, "title", v)} placeholder="Job Title / Role" />
-            <Input value={item.organisation} onChange={v => onChange(index, "organisation", v)} placeholder="Organisation" />
-            <Input value={item.from} onChange={v => onChange(index, "from", v)} placeholder="From (e.g. 2019)" />
-            <Input value={item.to} onChange={v => onChange(index, "to", v)} placeholder="To / Present" />
-            <div className="col-span-1 sm:col-span-2">
-              <Textarea value={item.description} onChange={v => onChange(index, "description", v)} placeholder="Brief description…" rows={2} />
-            </div>
+          <Input value={item.title} onChange={v => onChange(index, "title", v)} placeholder="Job Title / Role" />
+          <Input value={item.organisation} onChange={v => onChange(index, "organisation", v)} placeholder="Organisation" />
+          <Input value={item.from} onChange={v => onChange(index, "from", v)} placeholder="From (e.g. 2019)" />
+          <Input value={item.to} onChange={v => onChange(index, "to", v)} placeholder="To / Present" />
+          <div className="col-span-1 sm:col-span-2">
+            <Textarea value={item.description} onChange={v => onChange(index, "description", v)} placeholder="Brief description…" rows={2} />
           </div>
+        </div>
         : <>
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-black text-gray-800">{item.title || "—"}</p>
-                <p className="text-xs font-semibold text-gray-500 mt-0.5">{item.organisation || "—"}</p>
-              </div>
-              {(item.from || item.to) && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                  style={{ background: "rgba(233,30,140,0.08)", color: "#993556", border: "1px solid rgba(233,30,140,0.15)" }}>
-                  {[item.from, item.to].filter(Boolean).join(" → ")}
-                </span>
-              )}
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-sm font-black text-gray-800">{item.title || "—"}</p>
+              <p className="text-xs font-semibold text-gray-500 mt-0.5">{item.organisation || "—"}</p>
             </div>
-            {item.description && <p className="text-xs text-gray-500 mt-2 leading-relaxed">{item.description}</p>}
-          </>}
+            {(item.from || item.to) && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                style={{ background: "rgba(233,30,140,0.08)", color: "#993556", border: "1px solid rgba(233,30,140,0.15)" }}>
+                {[item.from, item.to].filter(Boolean).join(" → ")}
+              </span>
+            )}
+          </div>
+          {item.description && <p className="text-xs text-gray-500 mt-2 leading-relaxed">{item.description}</p>}
+        </>}
     </div>
   );
 }
@@ -422,14 +424,14 @@ function DownloadSection({
           {cardGenerated && cardDataUrl
             ? <img src={cardDataUrl} alt="Card preview" className="rounded-lg max-h-24 shadow-lg" style={{ boxShadow: "0 6px 20px rgba(78,174,229,0.25)" }} />
             : <div className="flex flex-col items-center justify-center gap-2 opacity-40">
-                <div className="rounded-xl flex flex-col justify-end p-3"
-                  style={{ width: 120, height: 70, background: "linear-gradient(135deg,#0F1C35,#4EAEE5)" }}>
-                  <div className="rounded-sm mb-1.5" style={{ width: 18, height: 12, background: "linear-gradient(135deg,#FAC775,#EF9F27)" }} />
-                  <div className="text-white font-black" style={{ fontSize: 7, letterSpacing: ".04em" }}>{member.name?.toUpperCase()}</div>
-                  <div className="font-mono" style={{ fontSize: 6, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>{member.memberId}</div>
-                </div>
-                <p className="text-[10px] text-gray-400 font-medium">Preview after generate</p>
-              </div>}
+              <div className="rounded-xl flex flex-col justify-end p-3"
+                style={{ width: 120, height: 70, background: "linear-gradient(135deg,#0F1C35,#4EAEE5)" }}>
+                <div className="rounded-sm mb-1.5" style={{ width: 18, height: 12, background: "linear-gradient(135deg,#FAC775,#EF9F27)" }} />
+                <div className="text-white font-black" style={{ fontSize: 7, letterSpacing: ".04em" }}>{member.name?.toUpperCase()}</div>
+                <div className="font-mono" style={{ fontSize: 6, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>{member.memberId}</div>
+              </div>
+              <p className="text-[10px] text-gray-400 font-medium">Preview after generate</p>
+            </div>}
         </div>
 
         {/* Actions */}
@@ -478,13 +480,13 @@ function DownloadSection({
           {posterGenerated && posterDataUrl
             ? <img src={posterDataUrl} alt="Poster preview" className="rounded-lg max-h-24 shadow-lg" style={{ boxShadow: "0 6px 20px rgba(155,89,182,0.25)" }} />
             : <div className="flex flex-col items-center justify-center gap-2 opacity-40">
-                <div className="rounded-xl flex flex-col items-center justify-end p-3"
-                  style={{ width: 64, height: 90, background: "linear-gradient(135deg,#9B59B6,#E91E8C)" }}>
-                  <div className="rounded-full mb-2" style={{ width: 28, height: 28, background: "rgba(255,255,255,0.25)" }} />
-                  <div className="text-white font-black text-center" style={{ fontSize: 5.5 }}>YOUR NAME<br />USRA MEMBER</div>
-                </div>
-                <p className="text-[10px] text-gray-400 font-medium">Preview after generate</p>
-              </div>}
+              <div className="rounded-xl flex flex-col items-center justify-end p-3"
+                style={{ width: 64, height: 90, background: "linear-gradient(135deg,#9B59B6,#E91E8C)" }}>
+                <div className="rounded-full mb-2" style={{ width: 28, height: 28, background: "rgba(255,255,255,0.25)" }} />
+                <div className="text-white font-black text-center" style={{ fontSize: 5.5 }}>YOUR NAME<br />USRA MEMBER</div>
+              </div>
+              <p className="text-[10px] text-gray-400 font-medium">Preview after generate</p>
+            </div>}
         </div>
 
         {/* Actions */}
@@ -540,6 +542,67 @@ function MoreMenu({ onLogout }) {
   );
 }
 
+const ProfilePayButton = ({ mongoId, isPaid = false, className = '' }) => {
+  const { openPayment, paymentStatus, isPaymentLoading } = useRazorpayPayment();
+
+  // ── Paid state ─────────────────────────────────────────────────────────────
+  if (isPaid) {
+    return (
+      <div className={`flex items-center gap-2 px-4 py-2 rounded-xl bg-green-50 text-green-600 font-semibold text-sm ${className}`}>
+        <FiCheckCircle className="w-4 h-4" />
+        Payment Complete
+      </div>
+    );
+  }
+
+  // ── Button label ────────────────────────────────────────────────────────────
+  const label = () => {
+    if (isPaymentLoading) {
+      return (
+        <>
+          <div className="spinner w-4 h-4" />
+          Opening Payment...
+        </>
+      );
+    }
+    if (paymentStatus === 'failed') {
+      return (
+        <>
+          <FiAlertCircle className="w-4 h-4" />
+          Retry Payment ₹100
+        </>
+      );
+    }
+    return (
+      <>
+        <FiCreditCard className="w-4 h-4" />
+        Complete Payment ₹100
+      </>
+    );
+  };
+
+  // ── Colour variant changes after failure ────────────────────────────────────
+  const colorClass = paymentStatus === 'failed'
+    ? 'bg-red-500 hover:bg-red-600 focus:ring-red-300'
+    : 'bg-usra-blue hover:bg-usra-blue/90 focus:ring-usra-blue/30';
+
+  return (
+    <button
+      onClick={() => openPayment(mongoId)}
+      disabled={isPaymentLoading}
+      className={`
+        flex items-center gap-2 px-5 py-2.5 rounded-xl
+        text-white font-semibold text-sm
+        transition-all focus:outline-none focus:ring-2
+        disabled:opacity-60 disabled:cursor-not-allowed
+        ${colorClass} ${className}
+      `}
+    >
+      {label()}
+    </button>
+  );
+};
+
 /* ═══════════════════════════════════════════════════════════════════════════
    Main Page
 ═══════════════════════════════════════════════════════════════════════════ */
@@ -549,15 +612,15 @@ export default function ProfilePage() {
   const { posterDataUrl, posterGenerated, generatingPoster, generatePoster } = usePosterGenerator();
   const { cardDataUrl, cardGenerated, generatingCard, generateCard } = useCardGenerator();
 
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const [member,   setMember]   = useState(null);
-  const [draft,    setDraft]    = useState(null);
-  const [loading,  setLoading]  = useState(true);
-  const [saving,   setSaving]   = useState({});
+  const [member, setMember] = useState(null);
+  const [draft, setDraft] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState({});
   const [editMode, setEditMode] = useState({});   // at most one key is true
-  const [toast,    setToast]    = useState({ msg: "", type: "" });
+  const [toast, setToast] = useState({ msg: "", type: "" });
   const [activeSection, setActiveSection] = useState("personal");
 
   /* ── Active section tracking via IntersectionObserver ────────────────── */
@@ -612,7 +675,7 @@ export default function ProfilePage() {
     annualIncome: m.annualIncome != null ? String(m.annualIncome) : "",
     skills: m.skills || "",
     highestQualification: m.highestQualification || "",
-    educations:  Array.isArray(m.educations)  ? m.educations  : [],
+    educations: Array.isArray(m.educations) ? m.educations : [],
     experiences: Array.isArray(m.experiences) ? m.experiences : [],
   });
 
@@ -646,7 +709,7 @@ export default function ProfilePage() {
     } else {
       // Guard: block opening new section if another has unsaved changes
       if (activeEditSection && activeEditSection !== section) {
-        setToast({ msg: `Save or discard changes in "${SECTIONS.find(s=>s.key===activeEditSection)?.label}" first.`, type: "error" });
+        setToast({ msg: `Save or discard changes in "${SECTIONS.find(s => s.key === activeEditSection)?.label}" first.`, type: "error" });
         return;
       }
       setEditMode({ [section]: true });
@@ -654,10 +717,10 @@ export default function ProfilePage() {
   };
 
   /* ── Draft setters ────────────────────────────────────────────────────── */
-  const set    = k => v => setDraft(d => ({ ...d, [k]: v }));
-  const setArr = (k, i, f, v) => setDraft(d => { const a = [...(d[k]||[])]; a[i] = { ...a[i], [f]: v }; return { ...d, [k]: a }; });
-  const addArr = (k, blank) => setDraft(d => ({ ...d, [k]: [...(d[k]||[]), blank] }));
-  const rmArr  = (k, i) => setDraft(d => { const a = [...(d[k]||[])]; a.splice(i,1); return { ...d, [k]: a }; });
+  const set = k => v => setDraft(d => ({ ...d, [k]: v }));
+  const setArr = (k, i, f, v) => setDraft(d => { const a = [...(d[k] || [])]; a[i] = { ...a[i], [f]: v }; return { ...d, [k]: a }; });
+  const addArr = (k, blank) => setDraft(d => ({ ...d, [k]: [...(d[k] || []), blank] }));
+  const rmArr = (k, i) => setDraft(d => { const a = [...(d[k] || [])]; a.splice(i, 1); return { ...d, [k]: a }; });
 
   /* ── Photo upload ─────────────────────────────────────────────────────── */
   const handlePhotoChange = async (file) => {
@@ -696,11 +759,11 @@ export default function ProfilePage() {
   );
   if (!member || !draft) return null;
 
-  const [from, to]  = accentFor(member.name);
-  const isMarried   = draft.maritalStatus === "Married";
-  const eduCount    = (draft.educations  || []).length;
-  const expCount    = (draft.experiences || []).length;
-  const completion  = computeCompletion(member, draft);
+  const [from, to] = accentFor(member.name);
+  const isMarried = draft.maritalStatus === "Married";
+  const eduCount = (draft.educations || []).length;
+  const expCount = (draft.experiences || []).length;
+  const completion = computeCompletion(member, draft);
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(145deg,#f0f4ff 0%,#faf5ff 50%,#f0fff8 100%)" }}>
@@ -749,7 +812,7 @@ export default function ProfilePage() {
             onToggle={() => toggleEdit("personal")} hint="DOB · parents · blood group">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Date of Birth" value={fmtDate(member.dob)} edit={editMode.personal}><Input value={draft.dob} onChange={set("dob")} type="date" /></Field>
-              <Field label="Gender" value={member.gender} edit={editMode.personal}><SelectInput value={draft.gender} onChange={set("gender")} options={["Male","Female","Other"]} placeholder="Select" /></Field>
+              <Field label="Gender" value={member.gender} edit={editMode.personal}><SelectInput value={draft.gender} onChange={set("gender")} options={["Male", "Female", "Other"]} placeholder="Select" /></Field>
               <Field label="Blood Group" value={member.bloodGroup} edit={editMode.personal}><SelectInput value={draft.bloodGroup} onChange={set("bloodGroup")} options={BLOOD_GROUPS} placeholder="Select" /></Field>
               <Field label="Marital Status" value={member.maritalStatus} edit={editMode.personal}><SelectInput value={draft.maritalStatus} onChange={set("maritalStatus")} options={MARITAL_OPTIONS} placeholder="Select" /></Field>
               <Field label="Father's Name" value={member.father} edit={editMode.personal}><Input value={draft.father} onChange={set("father")} placeholder="Father's full name" /></Field>
@@ -839,10 +902,10 @@ export default function ProfilePage() {
             {expCount === 0
               ? <EmptyCard icon={FiBriefcase} title="No experience added" hint="Click Edit to add work history" color="#E91E8C" />
               : (draft.experiences || []).map((item, i) => (
-                  <ExpCard key={i} item={item} index={i} edit={editMode.experience}
-                    onChange={(idx, f, v) => setArr("experiences", idx, f, v)}
-                    onRemove={idx => rmArr("experiences", idx)} />
-                ))
+                <ExpCard key={i} item={item} index={i} edit={editMode.experience}
+                  onChange={(idx, f, v) => setArr("experiences", idx, f, v)}
+                  onRemove={idx => rmArr("experiences", idx)} />
+              ))
             }
           </SectionCard>
 
@@ -868,51 +931,39 @@ export default function ProfilePage() {
             {eduCount === 0
               ? <EmptyCard icon={FiBook} title="No qualifications added" hint="Click Edit to add" color="#9B59B6" />
               : (draft.educations || []).map((item, i) => (
-                  <EduCard key={i} item={item} index={i} edit={editMode.education}
-                    onChange={(idx, f, v) => setArr("educations", idx, f, v)}
-                    onRemove={idx => rmArr("educations", idx)} />
-                ))
+                <EduCard key={i} item={item} index={i} edit={editMode.education}
+                  onChange={(idx, f, v) => setArr("educations", idx, f, v)}
+                  onRemove={idx => rmArr("educations", idx)} />
+              ))
             }
           </SectionCard>
 
           {/* 7 · Membership (read-only) */}
-          <div id="section-membership" className="rounded-3xl p-5 sm:p-6 scroll-mt-36"
-            style={{ background: "rgba(255,255,255,0.6)", border: "1.5px solid rgba(78,174,229,0.1)" }}>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl" style={{ background: "rgba(78,174,229,0.1)" }}>
-                <FiHash size={16} style={{ color: "#4EAEE5" }} />
-              </div>
-              <div>
-                <h2 className="text-sm font-black text-gray-800">Membership Info</h2>
-                <p className="text-[11px] text-gray-400 mt-0.5">Read-only · Contact admin to update</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <Field label="Member ID"       value={member.memberId} />
-              <Field label="Joined"          value={fmtDate(member.createdAt)} />
-              <Field label="Payment Status"  value={member.paymentStatus === "completed" ? "✓ Paid" : "⏳ Pending"} />
-            </div>
-          </div>
+          <MembershipPaymentSection member={member} />
 
           {/* 8 · Downloads */}
-          <div className="rounded-3xl p-5 sm:p-6"
-            style={{ background: "rgba(255,255,255,0.6)", border: "1.5px solid rgba(78,174,229,0.1)" }}>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(78,174,229,0.1)" }}>
-                <FiDownload size={16} style={{ color: "#4EAEE5" }} />
+          {member.paymentStatus === 'completed' &&
+            <div className="rounded-3xl p-5 sm:p-6"
+              style={{ background: "rgba(255,255,255,0.6)", border: "1.5px solid rgba(78,174,229,0.1)" }}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(78,174,229,0.1)" }}>
+                  <FiDownload size={16} style={{ color: "#4EAEE5" }} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-gray-800">Downloads</h2>
+                  <p className="text-[11px] text-gray-400 mt-0.5">Generate and download your card & poster</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-sm font-black text-gray-800">Downloads</h2>
-                <p className="text-[11px] text-gray-400 mt-0.5">Generate and download your card & poster</p>
-              </div>
+              <DownloadSection
+                member={member}
+                generatingCard={generatingCard} cardGenerated={cardGenerated} cardDataUrl={cardDataUrl} onGenerateCard={handleGenerateCard}
+                generatingPoster={generatingPoster} posterGenerated={posterGenerated} posterDataUrl={posterDataUrl} onGeneratePoster={handleGeneratePoster}
+                download={download}
+              />
             </div>
-            <DownloadSection
-              member={member}
-              generatingCard={generatingCard} cardGenerated={cardGenerated} cardDataUrl={cardDataUrl} onGenerateCard={handleGenerateCard}
-              generatingPoster={generatingPoster} posterGenerated={posterGenerated} posterDataUrl={posterDataUrl} onGeneratePoster={handleGeneratePoster}
-              download={download}
-            />
-          </div>
+          }
+
+
 
         </div>
       </div>

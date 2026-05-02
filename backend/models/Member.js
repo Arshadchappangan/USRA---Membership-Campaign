@@ -56,7 +56,8 @@ const memberSchema = new mongoose.Schema({
   amount: { type: Number, default: 100 },
   // auth
   role: { type: String, enum: ['member', 'admin'], default: 'member' },
-  createdAt: { type: Date, default: Date.now },
-});
+
+}
+, { timestamps: true });
 
 module.exports = mongoose.model('Member', memberSchema);
